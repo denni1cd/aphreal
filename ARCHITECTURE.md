@@ -1,5 +1,43 @@
 # Aphrael Architecture
 
+## Current foundation
+
+The approved [Foundation contract](FOUNDATION_CONTRACT.md) supersedes the original voice-first implementation sequence. The current runtime is one Windows-native Python 3.12+ process using FastAPI/Uvicorn, Pydantic, psutil, and SQLite. No voice SDK, hosted worker, tunnel, or paid service is needed.
+
+```text
+Local browser / HTTP adapter (app.py, index.html)
+                    |
+Provider-neutral Core (core.py)
+     | immediate calls          | durable queue
+     |                          v
+     |                   Worker protocol (workers.py)
+     |                          | capability callback
+     +--------------------------+
+                    |
+       Registry validation and policy (capabilities.py)
+                    |
+      Real read-only system / Git / filesystem tools
+                    |
+       Core-owned evidence and completion verification
+                    |
+       SQLite task records and events (storage.py)
+```
+
+The deterministic worker executes one explicitly requested registered capability. It receives a capability callback and cancellation event; it cannot establish completion merely by returning success. Core records actual callback evidence and checks successful operation/arguments against the stored request before committing COMPLETED. Tool metadata and input/output schemas are enforced outside the worker. Only read-only tools are permitted; there is no trusted approval issuer or write tool in this milestone.
+
+A single queue runner owns delegated work, guarded by an OS-held lock for the runtime directory. SQLite commits task transitions and events together. Queued work resumes after restart; previously RUNNING work becomes FAILED with an interruption error. Cancellation prevents later completion and the queue waits for an in-flight bounded read before starting its next worker. Immediate inspection and health remain separate from delegated execution.
+
+Configuration lives in `config.py`; provider/model fields can be profile data without binding core behavior to a provider SDK. The only implemented worker is `deterministic`; `general` selects it by default. Unknown or unconfigured aliases fail explicitly. The API exposes health, tool metadata/invocation, profiles, task creation/list/query/cancellation, and stored results. A future conversation adapter can use these existing commands without changing task storage, registry policy, or evidence verification. It must supply a concrete supported operation and arguments; natural-language planning is not implemented.
+
+Runtime data defaults to `%LOCALAPPDATA%\Aphrael`; source and runtime storage are kept separate. The service binds to `127.0.0.1` and rejects foreign browser origins. This is a trusted-local-account development boundary, not authenticated remote hosting. Filesystem access is restricted to the configured repository with bounded output and link/private-path exclusions. See [Foundation guide](docs/FOUNDATION.md) for exact commands and limitations.
+
+## Preserved future architecture research
+
+**The material below is historical design research, not current implementation instructions or prerequisites.** Its original “initial,” “preferred,” and provider-specific statements describe future options requiring fresh evaluation and scope approval. Telephone, Realtime, local models, shell/write tools, persona, memory, external integrations, and automatic startup are deferred. The current foundation above takes precedence wherever the older proposal differs. Research text is retained to preserve the project rationale; its external product claims have not been revalidated for this milestone.
+
+---
+# Aphrael Architecture
+
 **Status:** Initial architecture
 
 This document describes how the Aphrael vision and manifesto will be implemented. It is intentionally more concrete than the vision while remaining modular enough to change individual providers, models, and tools without redefining Aphrael.

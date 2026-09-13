@@ -1,5 +1,22 @@
 # Aphrael Project Plan
 
+## Current milestone: working local foundation
+
+Execution Contract v1.0 was independently reviewed and explicitly authorized by Clifton with “Go ahead and execute.” [FOUNDATION_CONTRACT.md](FOUNDATION_CONTRACT.md) defines acceptance. This milestone replaces the former Phase-0-only next action and does not require completing the telephone roadmap first.
+
+The implemented scope is native Windows setup/startup, a local browser harness and API, real bounded read-only capabilities, persistent tasks with one deterministic worker, profile selection, enforced policy, independently grounded evidence, and honest cancellation/restart handling. [Foundation guide](docs/FOUNDATION.md) describes the actual behavior and commands.
+
+Foundation closeout passed: 34 automated tests, observed Windows/browser operation and restart persistence, public-repository hygiene, and independent Adeptus Necroneerium evaluation. Both review findings were repaired and rechecked. See [verification evidence and assessment](docs/VERIFICATION.md) for the acceptance results and documented limits.
+
+No paid accounts or hosted dependencies, voice implementation, local speech downloads, unrestricted shell/write tools, external integrations, long-term memory, recurring scheduler, or automatic Windows startup are included. The next product milestone should be chosen after foundation evaluation against the enduring [manifesto](MANIFESTO.md) and [vision](VISION.md).
+
+## Preserved future roadmap
+
+**Everything below is the original roadmap retained as historical research and future options.** Its phase order, original MVP definition, technology choices, and final “Phase 0 only” next-action instruction are superseded for the current milestone. They do not authorize new work or require paid services. Future voice/provider choices require fresh evaluation and explicit scope approval. Development review processes remain development tools, not runtime requirements.
+
+---
+# Aphrael Project Plan
+
 **Status:** Initial implementation plan
 
 This plan turns the Aphrael manifesto, vision, and architecture into an ordered implementation path. The project should prove the hardest user-facing risks early: real phone access, natural conversation, local-computer action, and separation of conversation from longer work.

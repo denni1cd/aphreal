@@ -13,7 +13,7 @@ The milestone delivers:
 - documented setup, startup, update recovery, and operator checks; and
 - live acceptance evidence for conversation, tools, memory, delegation, Kanban, specialist workflows, controlled writes, persistence, and update preservation.
 
-The installation, provider-authorized live acceptance run, and cutover/rollback rehearsal are complete. The remaining work is the targeted final acceptance evidence and independent Adeptus Necroneerium and Strategerium closeout reviews. The old custom runtime remains in the checkout until those checks pass, so the migration can be assessed and reversed safely.
+The installation, provider-authorized live acceptance run, cutover/rollback rehearsal, and replacement checks are complete. The obsolete custom runtime has been removed after independent Strategerium authorization; the recoverable baseline tag remains the rollback source. The remaining work is independent Adeptus Necroneerium closeout review.
 
 ## Future work
 

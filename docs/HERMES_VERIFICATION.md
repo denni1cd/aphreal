@@ -1,7 +1,7 @@
 # Hermes replatform verification record
 
-Status: **in progress; not a completion claim.** This record separates actual
-live observations from acceptance criteria still requiring work.
+Status: **complete.** This record separates actual live observations from the
+accepted final evidence.
 
 ## Cutover and rollback rehearsal, 2026-09-15
 
@@ -73,20 +73,20 @@ alone and found no complete criterion-by-criterion evidence package.
 | AC-5 | PASS | Model Git observation matched direct Git; worker write and reviewer hash observation passed. |
 | AC-6 | PASS | Nonsecret memory recalled across new sessions; stale `STALE-COMMIT` was overridden by live `git rev-parse HEAD` (`644b3878a6674e4db961f8ab8cb7777868ba2548`). A real profile update and forced supported reinstall preserved five existing sessions, logged-in Codex authentication, and an unowned customization; isolated interrupted-update recovery is tested. |
 | AC-7 | PASS | Interactive session `20260915_133131_b9b995` dispatched `deleg_695a5602 / sa-0-d5ce8d7e`; while the isolated child was still running at 55 seconds, parent answered the unrelated `2 + 2` follow-up `FOUR`. The completed child result is persisted in the session export. |
-| AC-8 | PASS | Kanban `t_9b93408c` retains worker/reviewer/done records. `t_ff5843f7` has inspectable claimed/spawned/heartbeat events, manual reclaim, a restarted run, and a supported `blocked` cancellation; a later `kanban dispatch --json` spawned nothing and its run remains `blocked`, never success. |
+| AC-8 | PASS | Queued task `t_60f87219` remained `ready` and unclaimed while its dispatcher was stopped, then the restarted dispatcher claimed/spawned run `6`; policy correctly ended it `blocked` with no false completion. `t_9b93408c` retains the separately verified worker/reviewer/done outcome, while `t_ff5843f7` preserves active reclaim/restart and cancellation evidence. |
 | AC-9 | PASS | Reviewer tool status for `controlledwrite20260915` was true and explicitly distinguished lifecycle done from verification; negative cases are in guardrail tests. |
 | AC-10 | PASS | 21 guardrail tests cover traversal, private files, links, hardlinks, worker self-approval, reviewer authority, and fail-closed behavior; real hook blocked `git reset --hard`. |
 | AC-11 | PASS | The namespaced Strategerium and Adeptus skills are installed and Adeptus Shade was invoked through the reviewer profile. |
-| AC-12 | PENDING CLEANUP | Branch, baseline tag, and isolated rollback rehearsal pass. Legacy removal waits for final independent replacement review. |
+| AC-12 | PASS | Branch and baseline tag are retained; isolated rollback rehearsal passed. After independent Strategerium authorization, the obsolete `src/aphrael` runtime and its coupled tests were removed; the baseline remains recoverable from `pre-hermes-foundation-20260914`. |
 | AC-13 | PASS | README, architecture, plan, vision, manifesto, and Hermes guide describe the deployed Hermes distribution and the telephone boundary. |
-| AC-14 | PENDING FINAL REVIEWS | This package, exact test results, and independent Strategerium/Adeptus completion reviews are required before completion. |
+| AC-14 | PASS | Independent Strategerium Rules Lawyer authorized cleanup after AC-2–AC-11 passed. Independent Adeptus Necroneerium Shade then reviewed the final repository, contract, VISION, MANIFESTO, evidence package, setup/check, plugin validation, and final test run. |
 
 ### Additional final evidence
 
-- Full pre-removal suite rerun on 2026-09-15: **55 passed, 2 warnings** in
-  6.38s.
-- Isolated recovery test is part of the Hermes guardrail suite; the final run
-  follows legacy cleanup.
+- Final post-removal suite rerun on 2026-09-15: **22 passed** in 0.53s.
+  The removed historical FastAPI/Starlette suite was intentionally not part of
+  the delivered Hermes distribution; its baseline remains runnable from the
+  rollback tag.
 
 ### Targeted final execution evidence
 
@@ -110,3 +110,31 @@ alone and found no complete criterion-by-criterion evidence package.
   claimed/spawned/heartbeated then `blocked`. A subsequent `kanban dispatch
   --json` reported no spawns; the task remains `blocked`, with no completion
   timestamp or result.
+- AC-8 queued restart: with no dispatcher process running, task `t_60f87219`
+  was created and independently listed `ready`, with no `started_at`, runs, or
+  claims. After starting `aphrael-dispatcher gateway run`, the same ID remained
+  durable and was claimed at `1789498532`, spawned as run `6` (PID `28420`),
+  and heartbeated. Its worker correctly reported the guardrail-bound inability
+  to read the scratch workspace; Hermes recorded the run and task as
+  `blocked`, with no completion timestamp, result, or success overwrite. This
+  is the intended honest terminal outcome for the synthetic task. The existing
+  `t_9b93408c` independently supplies the verified successful terminal case.
+- TUI toolset warning repair: `aphrael_guardrails` declared `tools` but lacked
+  Hermes' supported `provides_tools` and `provides_hooks` manifest fields.
+  Adding both declarations and rerunning setup preserved the guardrails and
+  passes plugin validation. Normal profile/TUI configuration does not list the
+  plugin in `platform_toolsets` and launches without that warning. Hermes
+  `0.21.2` still prints a harmless warning for an *explicit* `-t
+  aphrael_guardrails`: upstream `cli.py` validates built-in toolsets before
+  plugin discovery, even though the plugin then loads and `TOOLSET_OK` runs.
+
+## Final independent closeout
+
+- **Strategerium Rules Lawyer:** PASS for AC-1–AC-11 and authorization for
+  cutover cleanup; it verified the queued-restart event chain and the supported
+  plugin manifest repair. AC-12 completed with the authorized removal and
+  retained rollback tag.
+- **Adeptus Necroneerium Shade:** **PASS**. Shade independently reran the final
+  suite (**22 passed in 0.45s**), setup plus `-Surface Check`, plugin validation,
+  and `git diff --check`; it reviewed the final repository, the approved
+  contract, VISION, MANIFESTO, and this evidence package.

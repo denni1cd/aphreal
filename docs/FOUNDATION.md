@@ -1,4 +1,17 @@
-# Foundation guide
+# Historical foundation
+
+The custom FastAPI/browser foundation described below was replaced by the
+Hermes distribution. Its runnable historical form remains available at the
+`pre-hermes-foundation-20260914` Git tag for rollback rehearsal. For current
+operation, use [the Hermes guide](HERMES_GUIDE.md):
+
+```powershell
+.\SETUP_APHRAEL.ps1
+.\START_APHRAEL.ps1 -Surface Chat
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+## Superseded guide
 
 ## Run and inspect
 

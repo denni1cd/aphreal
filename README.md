@@ -14,20 +14,20 @@ Use PowerShell in this checkout:
 
 The installer obtains the pinned Hermes runtime if required, creates four isolated profiles, installs the Aphrael guardrail plugin, and creates a dedicated Kanban board under `%USERPROFILE%\.hermes`. It does not read, print, import, or store OAuth credentials.
 
-Complete the one-time provider authorization using Hermes' device flow:
-
-```powershell
-$env:HERMES_HOME = "$env:USERPROFILE\.hermes"
-& "$env:USERPROFILE\.hermes\hermes-agent\venv\Scripts\python.exe" -m hermes_cli.main -p aphrael auth add openai-codex --type oauth
-```
-
-Follow the URL and code shown by Hermes. Then start Aphrael:
+Hermes reuses supported Codex authentication from its private profile state.
+Then start Aphrael:
 
 ```powershell
 .\START_APHRAEL.ps1 -Surface Chat
 ```
 
 `-Surface Tui` and `-Surface Desktop` use Hermes' supported interactive surfaces. `-Surface Check` validates the installed profiles without starting a conversation.
+
+Run repository verification with:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
 
 ## Boundaries
 

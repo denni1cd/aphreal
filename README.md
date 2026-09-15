@@ -1,31 +1,38 @@
 # Aphrael
 
-Aphrael is a local-first personal AI assistant project for Windows. Its current foundation runs real read-only workstation, repository, and filesystem capabilities, with persistent asynchronous tasks and independently checked completion evidence. Voice and AI provider integration remain future work.
+Aphrael is a Windows-native Hermes Agent distribution. Hermes provides the agent runtime; this repository supplies Aphrael's versioned identity, skills, guardrails, profile setup, and verification process.
 
-Install Python 3.12+ with `python` on PATH and Git for repository inspection. In PowerShell at this checkout:
+The current distribution is pinned to Hermes `0.21.2` and uses the supported OpenAI Codex OAuth provider. It does not contain a web server, telephone integration, tunnel, local speech runtime, or a custom agent loop.
 
-```powershell
-.\START_APHRAEL.ps1
-```
+## Install and start
 
-The launcher prepares a local `.venv` and installs dependencies if needed. Initial setup requires package download access; the running foundation requires no paid account or external service. Open [http://127.0.0.1:8765](http://127.0.0.1:8765). Stop with Ctrl+C.
-
-To explicitly install/update dependencies and run tests:
+Use PowerShell in this checkout:
 
 ```powershell
 .\SETUP_APHRAEL.ps1
-.\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Select a capability and click **Run capability now**, or enter a descriptive objective and click **Create task** using the `general` profile. **Inspect** shows durable events, results, and evidence; **Cancel** stops queued or cooperative running work. The selected capability and JSON arguments determine the operation; the objective is not interpreted as a natural-language plan.
+The installer obtains the pinned Hermes runtime if required, creates four isolated profiles, installs the Aphrael guardrail plugin, and creates a dedicated Kanban board under `%USERPROFILE%\.hermes`. It does not read, print, import, or store OAuth credentials.
 
-Runtime tasks and results live in `%LOCALAPPDATA%\Aphrael`, outside the repository. This development service is intended for a trusted local Windows account and binds to loopback.
+Complete the one-time provider authorization using Hermes' device flow:
 
-- [Foundation usage, configuration, privacy, recovery, and adapter API](docs/FOUNDATION.md)
-- [Foundation verification and independent assessment](docs/VERIFICATION.md)
-- [Current architecture and preserved future research](ARCHITECTURE.md)
-- [Current milestone and future roadmap](PROJECT_PLAN.md)
-- [Approved execution contract](FOUNDATION_CONTRACT.md)
-- [Manifesto](MANIFESTO.md) and [vision](VISION.md)
+```powershell
+$env:HERMES_HOME = "$env:USERPROFILE\.hermes"
+& "$env:USERPROFILE\.hermes\hermes-agent\venv\Scripts\python.exe" -m hermes_cli.main -p aphrael auth add openai-codex --type oauth
+```
 
-See [LICENSE](LICENSE) for licensing terms.
+Follow the URL and code shown by Hermes. Then start Aphrael:
+
+```powershell
+.\START_APHRAEL.ps1 -Surface Chat
+```
+
+`-Surface Tui` and `-Surface Desktop` use Hermes' supported interactive surfaces. `-Surface Check` validates the installed profiles without starting a conversation.
+
+## Boundaries
+
+Profiles keep their own configuration, policy, workspace, and runtime state. The distribution owns only the files listed in `distribution.yaml`; profile updates preserve user configuration, memories, sessions, credentials, and unowned local files. OAuth remains Hermes-managed and is intentionally never examined by Aphrael setup or tests.
+
+The guardrail plugin uses both a fail-closed Hermes shell hook and native tool hooks. It limits reads to the configured workspace and source checkout, limits writes to the workspace output directory, blocks private runtime paths, and requires an independent reviewer check before a controlled write can be recorded as verified. It is a policy boundary for Hermes tools, not a claim of OS isolation from another process running as the same Windows user.
+
+See [the setup and operations guide](docs/HERMES_GUIDE.md), the [approved contract](docs/HERMES_REPLATFORM_CONTRACT.md), and [Hermes research](docs/HERMES_RESEARCH.md).

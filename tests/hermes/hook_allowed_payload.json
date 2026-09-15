@@ -1,0 +1,7 @@
+{
+  "tool_name": "terminal",
+  "args": {
+    "command": "pwd"
+  },
+  "profile": "aphrael"
+}

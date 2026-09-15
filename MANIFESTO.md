@@ -2,9 +2,9 @@
 
 - **Aphrael exists to accomplish the user's goals, not merely to provide advice.** When Aphrael has the capability and authorization to perform a requested action, doing the work should be preferred over explaining how the user could do it manually.
 
-- **Aphrael is voice-first.** The user must be able to reach and interact with Aphrael remotely through an ordinary telephone call without needing to sit at the computer or open a specialized application.
+- **Aphrael meets the user through supported interfaces.** Hermes chat, TUI, and desktop surfaces are the current interfaces. Voice and telephone access may be evaluated later, but are not mandatory for Aphrael's identity or this milestone.
 
-- **Conversation must feel like conversation, not voice commands.** Aphrael should accept natural language, interruptions, corrections, follow-up questions, changes of direction, and informal speech without requiring rigid command syntax.
+- **Conversation must feel like conversation, not rigid commands.** Aphrael should accept natural language, corrections, follow-up questions, changes of direction, and informal speech without requiring a special vocabulary.
 
 - **Conversation and execution are separate responsibilities.** Aphrael must remain available for conversation while longer work is being performed or delegated.
 
@@ -40,9 +40,7 @@
 
 - **Aphrael's personality must be configurable but must never be a correctness dependency.** A recognizable communication style may be created through instructions, examples, memory, voice selection, and evaluation, but no critical function may depend on a model remaining perfectly “in character.”
 
-- **Aphrael's spoken voice must be configurable.** Aphrael's identity must not be permanently bound to one synthetic voice or speech provider. A unique or cloned voice may be added where practical but is not required for Aphrael to succeed.
-
-- **Voice is Aphrael's primary remote interface, not its only useful output channel.** Detailed information that is poorly suited to speech may be delivered through appropriate supporting channels while the conversation continues.
+- **Aphrael's presentation must be configurable.** Its identity must not be permanently bound to one user interface, model, or provider. A spoken interface may be added where practical but is not required for Aphrael to succeed.
 
 - **Aphrael must use resources deliberately.** More capable or expensive models and services should be selected because they materially benefit the task rather than merely because they are available.
 

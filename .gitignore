@@ -18,3 +18,17 @@ dist/
 build/
 .coverage
 htmlcov/
+# Hermes profile and personal state must remain outside this checkout.
+.hermes/
+memories/
+sessions/
+auth.json
+auth.json.*
+credentials.json
+*.key
+*.pem
+kanban/
+checkpoints/
+state-snapshots/
+backups/
+local/

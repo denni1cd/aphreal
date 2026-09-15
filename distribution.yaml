@@ -1,0 +1,15 @@
+name: aphrael
+version: 1.0.0
+description: Aphrael identity, optional specialist workflows and grounded action guardrails for Hermes.
+hermes_requires: "==0.21.2"
+author: Clifton
+license: MIT
+# Each owned directory is replaced on update. Put personal additions outside
+# these namespaces, for example skills/my-workflow or local/.
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills/aphrael-strategerium
+  - skills/aphrael-adeptus-necroneerium
+  - skills/aphrael-verified-action
+  - plugins/aphrael_guardrails

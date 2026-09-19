@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "aphrael_work_bridge.py"
+SCRIPT = Path(__file__).resolve().parents[2] / "plugins" / "aphrael_guardrails" / "work_bridge.py"
 spec = importlib.util.spec_from_file_location("aphrael_work_bridge_test", SCRIPT)
 bridge = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bridge)

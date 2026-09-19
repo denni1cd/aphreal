@@ -1,0 +1,12 @@
+APHRAEL_WORK_REQUEST
+id: 04f33669655046268e9b8761cc4f7de0
+instruction_sha256: 6db292a6f5a94beffccab363ff0feec7e7c0ca5f1b89d9772234bfab6a96d3f1
+task:
+Inspect the current denni1cd/aphreal repository after the Hermes migration. Produce a concise architecture assessment covering:
+
+- what Aphrael currently does;
+- what Hermes provides;
+- how the GitHub/ChatGPT Work bridge operates;
+- the three most important missing capabilities before Aphrael becomes useful as an everyday personal assistant.
+
+Do not modify application code. Return the assessment as the Work result.

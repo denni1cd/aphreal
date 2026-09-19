@@ -1,0 +1,4 @@
+APHRAEL_WORK_REQUEST
+id: 15870c0f4a914596bbddd873b0eff73c
+task: Create work_bridge_test.txt containing exactly:
+APHRAEL_WORK_BRIDGE_SUCCESS_15870c0f4a914596bbddd873b0eff73c

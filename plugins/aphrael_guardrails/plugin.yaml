@@ -1,6 +1,6 @@
 name: aphrael_guardrails
 version: "1.0.0"
-description: "Aphrael path policy and independent requested file outcome observations."
+description: "Aphrael path policy, verified file observations, and native ChatGPT Work bridge tools."
 hooks:
   - pre_tool_call
 provides_hooks:
@@ -8,6 +8,12 @@ provides_hooks:
 tools:
   - aphrael_verify_file
   - aphrael_verification_status
+  - aphrael_work_delegate
+  - aphrael_work_status
+  - aphrael_work_recall
 provides_tools:
   - aphrael_verify_file
   - aphrael_verification_status
+  - aphrael_work_delegate
+  - aphrael_work_status
+  - aphrael_work_recall

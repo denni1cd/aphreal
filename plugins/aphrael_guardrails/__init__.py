@@ -1,5 +1,8 @@
 """Supported Hermes native plugin registration; no internal Hermes imports."""
+import json
+
 from .guard import observe, pre_tool_call
+from . import work_bridge
 
 
 def register(ctx):
@@ -19,3 +22,41 @@ def register(ctx):
         def handler(args, _verify=verify, **kwargs):
             return observe(args, verify=_verify, profile_name=profile_name)
         ctx.register_tool(name=name, toolset='aphrael_guardrails', schema=schema, handler=handler)
+
+    work_tools = [
+        ('aphrael_work_delegate',
+         'Delegate an authorized natural-language repository task to ChatGPT Work through a GitHub PR.',
+         {'instruction': {'type': 'string'}}, ['instruction']),
+        ('aphrael_work_status',
+         'Verify the durable GitHub result for an existing Aphrael Work request.',
+         {'request_id': {'type': 'string'}}, ['request_id']),
+        ('aphrael_work_recall',
+         'Recall a durable completed and verified Work result without rerunning the task.',
+         {'request_id': {'type': 'string'}}, []),
+    ]
+    for name, description, properties, required in work_tools:
+        schema = {'name': name, 'description': description,
+                  'parameters': {'type': 'object', 'properties': properties,
+                                 'required': required, 'additionalProperties': False}}
+
+        def work_handler(args, _name=name, **kwargs):
+            try:
+                if _name == 'aphrael_work_delegate':
+                    record = work_bridge.delegate_to_work(args['instruction'])
+                    output = {key: record[key] for key in ('request_id', 'pr_url', 'status')}
+                elif _name == 'aphrael_work_status':
+                    record = work_bridge.check(args['request_id'])
+                    output = {key: record[key] for key in ('request_id', 'status')}
+                    for key in ('detail', 'result', 'pr_url', 'result_comment_url'):
+                        if key in record:
+                            output[key] = record[key]
+                else:
+                    record = work_bridge.recall(args.get('request_id'))
+                    output = {key: record[key] for key in ('request_id', 'status', 'result', 'pr_url')}
+                    if 'result_comment_url' in record:
+                        output['result_comment_url'] = record['result_comment_url']
+                return json.dumps(output)
+            except Exception as exc:
+                return json.dumps({'status': 'failed', 'detail': str(exc)})
+
+        ctx.register_tool(name=name, toolset='aphrael_guardrails', schema=schema, handler=work_handler)

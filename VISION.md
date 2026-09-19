@@ -20,7 +20,7 @@ It is a **conversational execution system**.
 
 ## The Aphrael Experience
 
-The primary remote interaction with Aphrael should be an ordinary telephone call.
+The current interaction is Hermes chat, TUI, or desktop on the user's Windows machine. Future remote or spoken interfaces may be useful, but Aphrael does not depend on a telephone service or a voice stack.
 
 The user should not need to adopt a special vocabulary or think in terms of prompts.
 
@@ -52,11 +52,11 @@ This ability to move freely between **conversation, immediate actions, and deleg
 
 ---
 
-## Voice
+## Interaction surfaces
 
-Voice is intended to be Aphrael's primary remote interface.
+Hermes-supported text and desktop surfaces are the current interfaces. A future voice surface can be evaluated independently.
 
-The conversation should support the qualities available in modern realtime voice systems, including natural turn-taking, streaming responses, interruption, correction, and conversational context.
+The conversation should support natural turn-taking, correction, and conversational context.
 
 Aphrael should have a selected voice and recognizable speaking style.
 

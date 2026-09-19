@@ -5,22 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "aphrael"
 version = "0.1.0"
-description = "Local-first Aphrael execution foundation"
+description = "Aphrael Hermes distribution verification assets"
 requires-python = ">=3.12"
-dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "pydantic>=2.10,<3", "psutil>=6,<8"]
+dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10", "httpx>=0.28,<1"]
-
-[project.scripts]
-aphrael = "aphrael.__main__:main"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data]
-aphrael = ["*.html"]
+dev = ["pytest>=8,<10"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests/hermes"]
 addopts = "-ra"

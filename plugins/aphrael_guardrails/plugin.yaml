@@ -1,0 +1,13 @@
+name: aphrael_guardrails
+version: "1.0.0"
+description: "Aphrael path policy and independent requested file outcome observations."
+hooks:
+  - pre_tool_call
+provides_hooks:
+  - pre_tool_call
+tools:
+  - aphrael_verify_file
+  - aphrael_verification_status
+provides_tools:
+  - aphrael_verify_file
+  - aphrael_verification_status

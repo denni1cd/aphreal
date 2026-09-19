@@ -1,0 +1,35 @@
+# Supported Hermes defaults. Setup binds private policy/hook paths and validates
+# required safety settings. Distribution updates preserve the installed config.
+model:
+  provider: openai-codex
+approvals:
+  mode: manual
+  cron_mode: deny
+  single_query_mode: deny
+  unattended_mode: deny
+security:
+  approval:
+    transport: builtin
+    transport_fallback: deny
+terminal:
+  backend: local
+delegation:
+  max_iterations: 100
+  max_concurrent_children: 3
+  max_spawn_depth: 1
+  subagent_auto_approve: false
+  inherit_mcp_toolsets: false
+  fallback_providers: []
+fallback_providers: []
+plugins:
+  enabled:
+    - aphrael_guardrails
+platform_toolsets:
+  # The guardrail is a Hermes plugin registered by `plugins.enabled`, not a
+  # built-in toolset name. Keeping it out of this list avoids silently dropping
+  # it as an unknown toolset while the plugin and fail-closed hook remain active.
+  cli: [terminal, file, skills, memory, session_search, todo, delegation, kanban]
+tool_loop_guardrails:
+  warnings_enabled: true
+  hard_stop_enabled: true
+  non_interactive_hard_stop_enabled: true

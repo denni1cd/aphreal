@@ -74,6 +74,13 @@ def test_wrong_result_hash_is_mismatch(tmp_path, monkeypatch):
     assert bridge.check(request_id)["status"] == "result mismatch"
 
 
+def test_malformed_marker_is_mismatch(tmp_path, monkeypatch):
+    request_id, body, record = stored_request(tmp_path, monkeypatch)
+    responses = github_responses(body, record, [{"body": bridge.RESULT_MARKER + "\nbroken"}])
+    monkeypatch.setattr(bridge, "gh_json", lambda *args: responses.pop(0))
+    assert bridge.check(request_id)["status"] == "result mismatch"
+
+
 def test_delegate_creates_branch_request_pr_and_state(tmp_path, monkeypatch):
     monkeypatch.setenv("APHRAEL_WORK_STATE", str(tmp_path))
     monkeypatch.setattr(bridge.uuid, "uuid4", lambda: type("U", (), {"hex": "b" * 32})())

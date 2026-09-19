@@ -135,9 +135,14 @@ def check(request_id: str) -> dict:
         atomic_json(path, record)
         return record
     comments = gh_json("api", f"repos/{REPO}/issues/{record['pr_number']}/comments")
-    candidates = [(comment, parse_result(comment.get("body", ""))) for comment in comments]
+    marked = [comment for comment in comments if RESULT_MARKER in comment.get("body", "")]
+    candidates = [(comment, parse_result(comment.get("body", ""))) for comment in marked]
     candidates = [(comment, result) for comment, result in candidates if result is not None]
-    if not candidates:
+    if marked and not candidates:
+        record.update(status="result mismatch", detail="malformed APHRAEL_WORK_RESULT comment")
+        atomic_json(path, record)
+        return record
+    if not marked:
         record.update(status="pending", detail="no APHRAEL_WORK_RESULT comment")
         atomic_json(path, record)
         return record
@@ -149,12 +154,12 @@ def check(request_id: str) -> dict:
     comment, result = matching[0]
     if result.get("request_sha256") != record["instruction_sha256"]:
         status, detail = "result mismatch", "returned request hash does not match"
+    elif result.get("result_sha256") != digest(result["result"]):
+        status, detail = "result mismatch", "returned result hash does not match"
     elif result.get("status") == "failed":
         status, detail = "failed", result["result"]
     elif result.get("status") != "completed":
         status, detail = "result mismatch", "returned status is invalid"
-    elif result.get("result_sha256") != digest(result["result"]):
-        status, detail = "result mismatch", "returned result hash does not match"
     elif comment.get("author_association") not in {"OWNER", "MEMBER", "COLLABORATOR"}:
         status, detail = "result mismatch", "result author lacks repository authority"
     else:

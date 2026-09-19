@@ -1,0 +1,5 @@
+APHRAEL_WORK_REQUEST
+id: 89d11eec806e47cdb9083c75425dfb16
+instruction_sha256: e8e46f9bf9c676cce6ee67f0f0d20c2f214691eacb4976b6e908c86dd2447517
+task:
+Inspect the current Aphrael repository and tell Clifton, in no more than five bullets, what the next development milestone should be after the Work bridge. Focus on repository evidence and roadmap implications; do not make code changes.

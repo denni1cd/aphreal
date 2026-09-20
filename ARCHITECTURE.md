@@ -8,7 +8,8 @@ agent execution, Kanban task lifecycle, delegation, and its supported chat,
 TUI, and desktop surfaces. Aphrael does not embed or wrap another agent loop.
 
 ```text
-Hermes chat / TUI / desktop
+ChatGPT Work -> APHRAEL.ps1 -> Hermes chat --query-file -Q
+                         or Hermes chat / TUI / desktop
           |
           v
    Aphrael Hermes profile
@@ -17,8 +18,23 @@ Hermes chat / TUI / desktop
     | dedicated Aphrael Kanban board
           |
           v
- Hermes providers, memory, sessions, delegation, and tools
+Hermes providers, memory, sessions, delegation, and tools
 ```
+
+`APHRAEL.ps1 ask` is a process boundary, not a service or agent. It invokes the
+installed pinned Hermes CLI with `-p aphrael`, tags the session as a tool
+integration, and returns a JSON envelope. Hermes' gateway was inspected for
+this milestone; it dispatches configured messaging platforms and does not
+provide a general local request API. The supported quiet single-query chat
+interface is therefore the thinner and more appropriate native entry point.
+
+Project context comes from Hermes' per-profile `projects.db`. Setup registers
+this checkout as the `aphrael` Project and the front door only reads it through
+Hermes' own `projects_db` module. The wrapper has no project or task database.
+An explicit known name wins; an explicitly supplied caller workspace can match
+a registered folder; otherwise a request stays projectless. Because Aphrael is
+also the assistant's name, that project requires project/repository/workspace
+wording rather than a bare “Aphrael” vocative.
 
 `distribution.yaml` pins Hermes to `0.21.2`, identifies the distribution-owned
 files, and avoids carrying runtime state in the repository. The profile source
@@ -58,5 +74,6 @@ configuration, OAuth, memories, sessions, and other unowned data are preserved.
 The `START_APHRAEL.ps1 -Surface Check` command detects missing guardrails,
 unsafe approval configuration, missing profile isolation, and a missing board.
 
-Telephone services, tunnels, local speech stacks, containers, WSL, and custom
-Python API runtimes are not part of this distribution.
+Telephone services, tunnels, local speech stacks, containers, WSL, public HTTP,
+and custom Python API runtimes are not part of this distribution. Front Door v1
+is local and synchronous; it does not add streaming or a background API.

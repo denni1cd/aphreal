@@ -36,6 +36,12 @@ a registered folder; otherwise a request stays projectless. Because Aphrael is
 also the assistant's name, that project requires project/repository/workspace
 wording rather than a bare “Aphrael” vocative.
 
+An explicitly supplied existing local directory can also be used for one
+invocation as an ephemeral read-only workspace. The front door derives a
+temporary policy from the installed profile policy, adds only that read root,
+and deletes the temporary policy after Hermes exits; it neither grants writes
+nor creates a Project.
+
 `distribution.yaml` pins Hermes to `0.21.2`, identifies the distribution-owned
 files, and avoids carrying runtime state in the repository. The profile source
 is the checked-out distribution and its state lives under the Hermes home.

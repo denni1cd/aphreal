@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,8 @@ import uuid
 
 
 SESSION_RE = re.compile(r"(?m)^Session:\s+([^\s]+)\s*$")
+QUOTED_WINDOWS_PATH_RE = re.compile(r'''["']([A-Za-z]:\\[^"'\r\n]+)["']''')
+BARE_WINDOWS_PATH_RE = re.compile(r"(?<![\w])([A-Za-z]:\\[^\s\"'<>|?*]+)")
 
 
 def installation() -> dict[str, Any]:
@@ -42,6 +45,34 @@ def native_projects(profile_home: Path) -> list[dict[str, Any]]:
 
 def _path_key(value: str | Path) -> str:
     return os.path.normcase(os.path.abspath(os.fspath(value))).rstrip("\\/")
+
+
+def explicit_workspace(request: str, workspace_path: str | None = None) -> Path | None:
+    """Return one explicit, existing, non-link directory supplied by the caller."""
+    raw_candidates = [workspace_path] if workspace_path else [
+        *QUOTED_WINDOWS_PATH_RE.findall(request),
+        *BARE_WINDOWS_PATH_RE.findall(request),
+    ]
+    candidates: list[Path] = []
+    for raw in filter(None, raw_candidates):
+        candidate = Path(str(raw).rstrip(".,;!"))
+        try:
+            if not candidate.is_absolute() or not candidate.is_dir():
+                continue
+            current = Path(candidate.anchor)
+            linked = False
+            for part in candidate.parts[1:]:
+                current /= part
+                info = current.lstat()
+                if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & 0x400:
+                    linked = True
+                    break
+            if not linked:
+                candidates.append(Path(os.path.abspath(candidate)))
+        except OSError:
+            continue
+    unique = {_path_key(path): path for path in candidates}
+    return next(iter(unique.values())) if len(unique) == 1 else None
 
 
 def resolve_project(
@@ -98,7 +129,9 @@ def project_summary(project: dict[str, Any] | None) -> dict[str, Any] | None:
     }
 
 
-def _prompt(request: str, project: dict[str, Any] | None) -> str:
+def _prompt(
+    request: str, project: dict[str, Any] | None, workspace: Path | None = None
+) -> str:
     boundary = (
         "You are being invoked through Aphrael Front Door v1. Treat the following "
         "as an ordinary user turn. Hermes remains authoritative for memory, sessions, "
@@ -111,6 +144,16 @@ def _prompt(request: str, project: dict[str, Any] | None) -> str:
             f" The caller resolved native Hermes Project {project['name']!r} "
             f"({project['id']}, slug {project['slug']}) at {project.get('primary_path')}. "
             "Use that as project context and place project artifacts in its workspace."
+        )
+    elif workspace:
+        boundary += (
+            f" The caller explicitly supplied existing local workspace {str(workspace)!r}. "
+            "It is an ephemeral read-only workspace context, not a registered project. "
+            "Inspect it with allowed read-only tools; do not write there or claim it was "
+            "registered as a Hermes Project. For Git inspection, terminal commands must be "
+            "issued one per tool call, with no chaining or git -C prefix. Safe exact commands "
+            "include: git status --short --branch; git branch --show-current; git rev-parse HEAD; "
+            "git log -1 --oneline --decorate; git --no-pager log -5 --oneline; git remote -v."
         )
     else:
         boundary += (
@@ -125,6 +168,7 @@ def invoke_hermes(
     request: str,
     install: dict[str, Any],
     project: dict[str, Any] | None,
+    workspace: Path | None = None,
     resume: str | None = None,
 ) -> tuple[subprocess.CompletedProcess[str], str | None]:
     profile_home = Path(install["root"]) / "profiles" / "aphrael"
@@ -136,7 +180,7 @@ def invoke_hermes(
         PYTHONIOENCODING="utf-8",
     )
     env.pop("APHRAEL_POLICY_FILE", None)
-    workdir = project.get("primary_path") if project else install["workspace"]
+    workdir = project.get("primary_path") if project else str(workspace or install["workspace"])
     args = [
         str(install["python"]), "-m", "hermes_cli.main", "-p", "aphrael",
         "chat", "--query-file", "", "-Q", "--source", "tool",
@@ -150,8 +194,24 @@ def invoke_hermes(
         # after the turn without scraping or inventing an identifier.
         session_title = f"aphrael-front-door-{uuid.uuid4().hex}"
         args.extend(("--continue", session_title, "--create-if-missing"))
+    policy_path: str | None = None
+    if workspace:
+        base_policy_path = profile_home / "aphrael-policy.json"
+        ephemeral_policy = json.loads(base_policy_path.read_text(encoding="utf-8-sig"))
+        ephemeral_policy["read_roots"] = list(dict.fromkeys([
+            *ephemeral_policy.get("read_roots", [ephemeral_policy["workspace"]]),
+            str(workspace),
+        ]))
+        # Hermes tools commonly omit workdir for operations in the current
+        # conversational workspace. Point relative reads and read-only terminal
+        # defaults at the explicit directory; write_roots remain unchanged.
+        ephemeral_policy["workspace"] = str(workspace)
+        with tempfile.NamedTemporaryFile("w", suffix=".json", encoding="utf-8", delete=False) as handle:
+            json.dump(ephemeral_policy, handle)
+            policy_path = handle.name
+        env["APHRAEL_POLICY_FILE"] = policy_path
     with tempfile.NamedTemporaryFile("w", suffix=".txt", encoding="utf-8", delete=False) as handle:
-        handle.write(_prompt(request, project))
+        handle.write(_prompt(request, project, workspace))
         query_path = handle.name
     args[args.index("--query-file") + 1] = query_path
     try:
@@ -162,6 +222,8 @@ def invoke_hermes(
         return result, session_title
     finally:
         Path(query_path).unlink(missing_ok=True)
+        if policy_path:
+            Path(policy_path).unlink(missing_ok=True)
 
 
 def parse_hermes_output(stdout: str) -> tuple[str, str | None, str | None]:
@@ -178,9 +240,13 @@ def parse_hermes_output(stdout: str) -> tuple[str, str | None, str | None]:
 def ask(args: argparse.Namespace) -> int:
     install = installation()
     projects = native_projects(Path(install["root"]) / "profiles" / "aphrael")
-    project = resolve_project(args.request, projects, args.workspace_path)
+    workspace = explicit_workspace(args.request, args.workspace_path)
+    project = resolve_project(args.request, projects, str(workspace) if workspace else None)
+    ad_hoc_workspace = workspace if project is None else None
     try:
-        result, session_title = invoke_hermes(args.request, install, project, args.resume)
+        result, session_title = invoke_hermes(
+            args.request, install, project, ad_hoc_workspace, args.resume
+        )
     except Exception as exc:
         envelope = {
             "success": False, "status": "error", "session_id": args.resume,

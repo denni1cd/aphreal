@@ -46,6 +46,22 @@ def test_caller_workspace_resolves_registered_project():
     assert resolved["slug"] == "aphrael"
 
 
+def test_explicit_existing_workspace_is_inferred_from_request(tmp_path):
+    workspace = tmp_path / "voidhunter"
+    workspace.mkdir()
+    request = f"Review the project at {workspace}"
+    assert front_door.explicit_workspace(request) == workspace
+
+
+def test_missing_or_ambiguous_workspace_is_not_inferred(tmp_path):
+    first = tmp_path / "one"
+    second = tmp_path / "two"
+    first.mkdir()
+    second.mkdir()
+    assert front_door.explicit_workspace(r"Review C:\missing\project") is None
+    assert front_door.explicit_workspace(f"Compare {first} and {second}") is None
+
+
 def test_ambiguous_explicit_match_stays_projectless():
     duplicate = {**PROJECTS[0], "id": "p_other", "slug": "other", "name": "Aphrael"}
     assert front_door.resolve_project("Aphrael", [PROJECTS[0], duplicate]) is None

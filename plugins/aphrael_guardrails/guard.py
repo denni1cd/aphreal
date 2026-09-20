@@ -119,11 +119,14 @@ def decide(tool_name, args, p):
         if write and len(json.dumps(args)) > 1048576:
             raise Denied('Write too large')
         if tool_name == 'search_files' and path.is_dir():
-            # Stock recursive search must not encounter any private/link target.
-            # Reject broad trees; users can search a safe narrower directory.
+            # Hermes' stock search skips hidden directories and respects ignore
+            # files. Validate its reachable public tree without making the mere
+            # presence of .git/.venv/etc. block discovery at an approved root.
+            # Directly targeting any private path remains denied by checked_path.
             count = 0
             for base, dirs, files in os.walk(path, followlinks=False):
-                for name in dirs + files:
+                dirs[:] = [name for name in dirs if not sensitive(name)]
+                for name in dirs + [name for name in files if not sensitive(name)]:
                     checked_path(str(Path(base) / name), p)
                     count += 1
                     if count > 20000:
@@ -131,7 +134,15 @@ def decide(tool_name, args, p):
         return {'action': 'modify', 'args': {'path': str(path)}}
     if tool_name == 'terminal':
         # No shell interpretation of model-supplied text beyond these literals.
-        allowed = {'pwd', 'uname -s', 'git --no-pager -c core.fsmonitor=false -c core.untrackedCache=false status --short', 'git --no-pager rev-parse HEAD', 'git --no-pager branch --show-current'}
+        allowed = {
+            'pwd', 'uname -s',
+            'git status --short', 'git status --short --branch',
+            'git branch --show-current', 'git rev-parse HEAD',
+            'git log -1 --oneline --decorate', 'git --no-pager log -5 --oneline',
+            'git remote -v',
+            'git --no-pager -c core.fsmonitor=false -c core.untrackedCache=false status --short',
+            'git --no-pager rev-parse HEAD', 'git --no-pager branch --show-current',
+        }
         if args.get('command') not in allowed or set(args) - {'command', 'workdir', 'timeout'}:
             raise Denied('Arbitrary terminal command denied')
         workdir = checked_path(args.get('workdir', p['workspace']), p)

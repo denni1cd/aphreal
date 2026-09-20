@@ -46,6 +46,12 @@ this checkout as `aphrael`, bound to the Aphrael board. The front door resolves:
 2. one registered folder containing an explicit `--workspace-path`;
 3. no project when the match is absent or ambiguous.
 
+When a request contains exactly one explicit absolute path to an existing local
+directory (or supplies it with `--workspace-path`) and that directory is not a
+registered Project, the front door uses it as an ephemeral read-only workspace.
+It augments the active invocation's read policy only, does not grant writes,
+does not persist the path, and does not silently create a Hermes Project.
+
 Continuation uses Hermes' session context. Task-level project inheritance is
 owned by Hermes/Kanban, not reimplemented by the wrapper. Ad-hoc requests do
 not create projects.

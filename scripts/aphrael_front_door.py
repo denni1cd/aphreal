@@ -19,7 +19,6 @@ import uuid
 
 
 SESSION_RE = re.compile(r"(?m)^Session:\s+([^\s]+)\s*$")
-TASK_RE = re.compile(r"\b(t_[0-9a-f]{8})\b")
 
 
 def installation() -> dict[str, Any]:
@@ -170,10 +169,10 @@ def parse_hermes_output(stdout: str) -> tuple[str, str | None, str | None]:
     session_id = session_match.group(1) if session_match else None
     response = stdout[: session_match.start()].rstrip() if session_match else stdout.strip()
     response = re.sub(r"^Warning: Unknown toolsets: aphrael_guardrails\s*", "", response)
-    # Hermes has no structured task-id field on this interface. Only return an
-    # ID when the actual response contains Hermes' native task identifier.
-    task_match = TASK_RE.search(response)
-    return response, session_id, task_match.group(1) if task_match else None
+    # Hermes 0.21.2 has no structured task-id field on this interface. Natural
+    # language is not authoritative evidence, so never promote text that merely
+    # resembles an ID into envelope metadata.
+    return response, session_id, None
 
 
 def ask(args: argparse.Namespace) -> int:

@@ -67,6 +67,6 @@ def test_known_runtime_startup_warning_is_not_part_of_response():
     assert response == "Actual answer"
 
 
-def test_task_identifier_is_not_fabricated():
+def test_task_identifier_is_not_inferred_from_prose():
     _, _, task_id = front_door.parse_hermes_output("Created Hermes task t_deadbeef\n")
-    assert task_id == "t_deadbeef"
+    assert task_id is None

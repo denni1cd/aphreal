@@ -33,8 +33,9 @@ From the repository checkout:
 
 `ask` returns JSON with `success`, `status`, `session_id`, `response`,
 `project`, `task_id`, and `error`. The session ID is resolved from Hermes'
-native session store; the wrapper does not mint it. `task_id` is null unless
-Hermes' actual response contains a native `t_........` identifier.
+native session store; the wrapper does not mint it. Hermes 0.21.2 does not
+return structured task metadata from quiet chat, so `task_id` remains null;
+prose that merely resembles an ID is never promoted into authoritative data.
 
 ## Projects
 

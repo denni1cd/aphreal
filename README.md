@@ -31,8 +31,8 @@ Front Door:
 ```
 
 It emits a JSON envelope containing success/status, the real Hermes session ID,
-Aphrael's response, optional native Hermes Project context, an actual task ID
-when the response supplies one, and error details. Continue the same Hermes
+Aphrael's response, optional native Hermes Project context, a task ID field
+(null where this Hermes interface has none), and error details. Continue the same Hermes
 conversation with `--resume <session_id>`. See
 [Front Door operations](docs/FRONT_DOOR.md) for the exact Desktop Work
 instruction and project/output rules.

@@ -182,6 +182,24 @@ def recall(request_id: str | None = None) -> dict:
     raise RuntimeError("no durable verified Work result found")
 
 
+def recent(limit: int = 10) -> list[dict]:
+    """List local handoffs so a follow-up can identify its exact request ID."""
+    if not 1 <= limit <= 50:
+        raise ValueError("limit must be between 1 and 50")
+    directory = state_root() / "requests"
+    records = []
+    for path in sorted(directory.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:limit]:
+        if not SAFE_ID.fullmatch(path.stem):
+            continue
+        record = json.loads(path.read_text(encoding="utf-8"))
+        if record.get("request_id") != path.stem:
+            continue
+        records.append({key: record.get(key) for key in (
+            "request_id", "instruction", "status", "pr_url", "detail"
+        )})
+    return records
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -192,6 +210,8 @@ def main() -> int:
     status.add_argument("request_id")
     recall_parser = sub.add_parser("recall")
     recall_parser.add_argument("request_id", nargs="?")
+    recent_parser = sub.add_parser("recent")
+    recent_parser.add_argument("--limit", type=int, default=10)
     args = parser.parse_args()
     try:
         if args.command == "delegate":
@@ -201,6 +221,8 @@ def main() -> int:
             output = delegate_to_work(instruction)
         elif args.command == "status":
             output = check(args.request_id)
+        elif args.command == "recent":
+            output = {"status": "ok", "requests": recent(args.limit)}
         else:
             output = recall(args.request_id)
         print(json.dumps(output, indent=2, sort_keys=True))

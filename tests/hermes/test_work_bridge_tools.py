@@ -29,7 +29,7 @@ def registered(monkeypatch):
 
 def test_native_work_tools_register_with_strict_schemas(monkeypatch):
     ctx = registered(monkeypatch)
-    expected = {"aphrael_work_delegate", "aphrael_work_status", "aphrael_work_recall"}
+    expected = {"aphrael_work_delegate", "aphrael_work_status", "aphrael_work_recall", "aphrael_work_recent"}
     assert expected <= set(ctx.tools)
     assert all(ctx.tools[name]["toolset"] == "aphrael_guardrails" for name in expected)
     assert ctx.tools["aphrael_work_delegate"]["schema"]["parameters"]["required"] == ["instruction"]
@@ -48,13 +48,17 @@ def test_native_work_tool_invocation_calls_python_bridge(monkeypatch):
     monkeypatch.setattr(plugin.work_bridge, "recall", lambda request_id=None: calls.append(("recall", request_id)) or {
         "request_id": "a" * 32, "pr_url": "https://github.test/pull/1", "status": "completed + verified",
         "result": "finding"})
+    monkeypatch.setattr(plugin.work_bridge, "recent", lambda limit=10: calls.append(("recent", limit)) or [{
+        "request_id": "a" * 32, "status": "pending"}])
     ctx = registered(monkeypatch)
 
     delegated = json.loads(ctx.tools["aphrael_work_delegate"]["handler"]({"instruction": "inspect"}))
     verified = json.loads(ctx.tools["aphrael_work_status"]["handler"]({"request_id": "a" * 32}))
     recalled = json.loads(ctx.tools["aphrael_work_recall"]["handler"]({}))
+    recent = json.loads(ctx.tools["aphrael_work_recent"]["handler"]({}))
 
     assert delegated == {"request_id": "a" * 32, "pr_url": "https://github.test/pull/1", "status": "pending"}
     assert verified["status"] == recalled["status"] == "completed + verified"
     assert verified["result"] == recalled["result"] == "finding"
-    assert calls == [("delegate", "inspect"), ("status", "a" * 32), ("recall", None)]
+    assert recent["requests"][0]["request_id"] == "a" * 32
+    assert calls == [("delegate", "inspect"), ("status", "a" * 32), ("recall", None), ("recent", 10)]

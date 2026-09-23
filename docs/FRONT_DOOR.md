@@ -29,6 +29,8 @@ From the repository checkout:
 .\APHRAEL.ps1 ask "What did we decide?" --resume 20260919_225802_db2e32
 .\APHRAEL.ps1 ask "Run the tests" --workspace-path C:\path\to\registered\repo
 .\APHRAEL.ps1 projects
+.\APHRAEL.ps1 work-recent --compact
+.\APHRAEL.ps1 work-status <request_id> --compact
 ```
 
 `ask` returns JSON with `success`, `status`, `session_id`, `response`,
@@ -36,6 +38,10 @@ From the repository checkout:
 native session store; the wrapper does not mint it. Hermes 0.21.2 does not
 return structured task metadata from quiet chat, so `task_id` remains null;
 prose that merely resembles an ID is never promoted into authoritative data.
+`work-recent` lists locally recorded bridge handoffs with exact request IDs and
+last-observed statuses. `work-status` refreshes one request against GitHub and
+returns its PR and verified result when available. These commands do not create
+a Hermes conversation or replace its native task state.
 
 ## Projects
 
@@ -90,11 +96,19 @@ delegated Work worker. Existing request metadata, idempotency, and verified
 recall remain the loop boundary; the Front Door does not alter bridge triggers
 or feed delegated worker prompts back through itself.
 
+For a follow-up such as “What happened with that change?”, identify the exact
+handoff through `work-recent` if the request ID is missing, then call
+`work-status` or ask Aphrael to use `aphrael_work_status`. A recent row is a
+local last-observed status, not a live GitHub check. `completed + verified`
+establishes the integrity and authority of the returned report; inspect PR
+diffs, checks, and merge state separately before claiming the code is correct,
+tested, or merged.
+
 ## Desktop ChatGPT Work instruction
 
 Paste this into a normal Desktop ChatGPT Work conversation:
 
-> When I address Aphrael, use your local PowerShell/terminal capability to run `& 'C:\Users\Zero\python_projects\ai\aphreal\APHRAEL.ps1' ask '<my complete request>' --compact`. Parse the returned JSON and give me the `response` as Aphrael's answer, while preserving `session_id`, `project`, `task_id`, and any `error`. On my next Aphrael message, add `--resume <the prior session_id>` unless I ask for a new conversation. Do not answer in Aphrael's place and do not invoke Hermes directly.
+> When I address Aphrael, use your local PowerShell/terminal capability to run `& 'C:\Users\Zero\python_projects\ai\aphreal\APHRAEL.ps1' ask '<my complete request>' --compact`. Parse the returned JSON and give me the `response` as Aphrael's answer, while preserving `session_id`, `project`, `task_id`, and any `error`. On my next Aphrael message, add `--resume <the prior session_id>` unless I ask for a new conversation. When Aphrael delegates to Work, preserve its bridge `request_id` and PR URL too. For a later progress question with a known request ID, call `APHRAEL.ps1 work-status <request_id> --compact`; if the ID is lost, use `APHRAEL.ps1 work-recent --compact` to identify the handoff, then refresh its status. Treat the Hermes session ID, Hermes task ID, and bridge request ID as different identifiers. Do not answer in Aphrael's place and do not invoke Hermes directly.
 
 The request must be passed as one literal process argument; an automation
 should use an argument array rather than string-building when available.

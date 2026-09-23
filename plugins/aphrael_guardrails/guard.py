@@ -163,7 +163,7 @@ def decide(tool_name, args, p):
         if tool_name == 'aphrael_verify_file' and p['role'] != 'reviewer':
             raise Denied('Only reviewer may observe verification')
         return None
-    if tool_name in {'aphrael_work_delegate', 'aphrael_work_status', 'aphrael_work_recall'}:
+    if tool_name in {'aphrael_work_delegate', 'aphrael_work_status', 'aphrael_work_recall', 'aphrael_work_recent'}:
         if tool_name == 'aphrael_work_delegate' and p['role'] == 'reviewer':
             raise Denied('Reviewer cannot delegate authority')
         return None

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import argparse
+import json
 from pathlib import Path
 
 
@@ -86,3 +88,18 @@ def test_known_runtime_startup_warning_is_not_part_of_response():
 def test_task_identifier_is_not_inferred_from_prose():
     _, _, task_id = front_door.parse_hermes_output("Created Hermes task t_deadbeef\n")
     assert task_id is None
+
+
+def test_work_status_and_recent_are_separate_from_hermes_session(monkeypatch, capsys):
+    from plugins.aphrael_guardrails import work_bridge
+
+    monkeypatch.setattr(work_bridge, "check", lambda request_id: {
+        "request_id": request_id, "status": "pending", "pr_url": "https://github.test/pr/1"})
+    monkeypatch.setattr(work_bridge, "recent", lambda limit: [{
+        "request_id": "a" * 32, "status": "pending"}])
+    assert front_door.work_status(argparse.Namespace(request_id="a" * 32, compact=True)) == 0
+    status = json.loads(capsys.readouterr().out)
+    assert status["request_id"] == "a" * 32
+    assert "session_id" not in status
+    assert front_door.work_recent(argparse.Namespace(limit=10, compact=True)) == 0
+    assert json.loads(capsys.readouterr().out)["requests"][0]["request_id"] == "a" * 32

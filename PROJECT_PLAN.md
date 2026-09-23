@@ -17,4 +17,11 @@ The installation, provider-authorized live acceptance run, cutover/rollback rehe
 
 ## Future work
 
+The next development loop uses Desktop ChatGPT Work as the entry point. Aphrael
+keeps its Hermes conversation and delegates repository work through the durable
+Work bridge. The Front Door exposes recent handoffs and a fresh status check so
+follow-up questions can resolve the exact request and PR. This does not turn a
+bridge result into proof that a code change is correct or merged; PR diffs and
+checks require separate review.
+
 Future capability is selected from the [vision](VISION.md) and [manifesto](MANIFESTO.md) through a new reviewed, user-approved contract. Telephone services, tunnels, local speech runtimes, local models, containers, WSL, and an Aphrael-specific HTTP application are outside this milestone.

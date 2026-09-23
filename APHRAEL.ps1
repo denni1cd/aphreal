@@ -1,6 +1,6 @@
 param(
     [Parameter(Position=0, Mandatory=$true)]
-    [ValidateSet('ask','projects')]
+    [ValidateSet('ask','projects','work-status','work-recent')]
     [string]$Command,
     [Parameter(Position=1, ValueFromRemainingArguments=$true)]
     [string[]]$Arguments

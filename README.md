@@ -37,6 +37,9 @@ conversation with `--resume <session_id>`. See
 [Front Door operations](docs/FRONT_DOOR.md) for the exact Desktop Work
 instruction and project/output rules.
 
+To follow work that Aphrael delegated to ChatGPT Work, use `work-recent` to find
+the bridge request ID and `work-status <request_id>` to refresh its GitHub result.
+
 Run repository verification with:
 
 ```powershell

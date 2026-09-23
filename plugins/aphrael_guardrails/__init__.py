@@ -33,6 +33,9 @@ def register(ctx):
         ('aphrael_work_recall',
          'Recall a durable completed and verified Work result without rerunning the task.',
          {'request_id': {'type': 'string'}}, []),
+        ('aphrael_work_recent',
+         'List recent Work handoffs and their exact request IDs; status is last observed, not live.',
+         {'limit': {'type': 'integer', 'minimum': 1, 'maximum': 50}}, []),
     ]
     for name, description, properties, required in work_tools:
         schema = {'name': name, 'description': description,
@@ -50,6 +53,8 @@ def register(ctx):
                     for key in ('detail', 'result', 'pr_url', 'result_comment_url'):
                         if key in record:
                             output[key] = record[key]
+                elif _name == 'aphrael_work_recent':
+                    output = {'status': 'ok', 'requests': work_bridge.recent(args.get('limit', 10))}
                 else:
                     record = work_bridge.recall(args.get('request_id'))
                     output = {key: record[key] for key in ('request_id', 'status', 'result', 'pr_url')}

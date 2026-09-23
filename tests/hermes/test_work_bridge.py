@@ -4,6 +4,7 @@ import base64
 import importlib.util
 import json
 from pathlib import Path
+import pytest
 
 
 SCRIPT = Path(__file__).resolve().parents[2] / "plugins" / "aphrael_guardrails" / "work_bridge.py"
@@ -98,3 +99,15 @@ def test_delegate_creates_branch_request_pr_and_state(tmp_path, monkeypatch):
     assert record["branch"] == "aphrael/work-" + "b" * 32
     assert bridge.request_path(record["request_id"]).is_file()
     assert any("repos/denni1cd/aphreal/pulls" in call for call in calls)
+
+
+def test_recent_identifies_handoffs_without_claiming_live_status(tmp_path, monkeypatch):
+    request_id, _, _ = stored_request(tmp_path, monkeypatch)
+    recent = bridge.recent()
+    assert recent == [{
+        "request_id": request_id, "instruction": "Assess architecture",
+        "status": "pending", "pr_url": "https://github.test/pull/9", "detail": None,
+    }]
+    assert bridge.recent(1) == recent
+    with pytest.raises(ValueError):
+        bridge.recent(0)

@@ -18,6 +18,8 @@ import tempfile
 from typing import Any
 import uuid
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 
 SESSION_RE = re.compile(r"(?m)^Session:\s+([^\s]+)\s*$")
 QUOTED_WINDOWS_PATH_RE = re.compile(r'''["']([A-Za-z]:\\[^"'\r\n]+)["']''')
@@ -288,6 +290,30 @@ def list_projects(_: argparse.Namespace) -> int:
     return 0
 
 
+def work_status(args: argparse.Namespace) -> int:
+    """Expose the same durable bridge check to the Work front end."""
+    from plugins.aphrael_guardrails import work_bridge
+
+    try:
+        record = work_bridge.check(args.request_id)
+    except Exception as exc:
+        record = {"request_id": args.request_id, "status": "failed", "detail": str(exc)}
+    print(json.dumps(record, ensure_ascii=False, indent=None if args.compact else 2))
+    return 1 if record.get("status") in {"failed", "result mismatch"} else 0
+
+
+def work_recent(args: argparse.Namespace) -> int:
+    from plugins.aphrael_guardrails import work_bridge
+
+    try:
+        output = {"requests": work_bridge.recent(args.limit)}
+    except Exception as exc:
+        output = {"status": "failed", "detail": str(exc)}
+    print(json.dumps(output, ensure_ascii=False,
+                     indent=None if args.compact else 2))
+    return 1 if output.get("status") == "failed" else 0
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="aphrael", description="Local front door to the real Aphrael Hermes profile")
     commands = root.add_subparsers(dest="command", required=True)
@@ -299,6 +325,14 @@ def parser() -> argparse.ArgumentParser:
     ask_parser.set_defaults(handler=ask)
     projects_parser = commands.add_parser("projects", help="List native Hermes Projects registered for Aphrael")
     projects_parser.set_defaults(handler=list_projects)
+    status_parser = commands.add_parser("work-status", help="Refresh one Work handoff from GitHub")
+    status_parser.add_argument("request_id")
+    status_parser.add_argument("--compact", action="store_true")
+    status_parser.set_defaults(handler=work_status)
+    recent_parser = commands.add_parser("work-recent", help="List locally recorded Work handoffs")
+    recent_parser.add_argument("--limit", type=int, default=10)
+    recent_parser.add_argument("--compact", action="store_true")
+    recent_parser.set_defaults(handler=work_recent)
     return root
 
 

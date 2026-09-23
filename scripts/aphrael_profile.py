@@ -209,6 +209,25 @@ def install(root, source, workspace, model):
                 (profile / 'aphrael-update-in-progress').unlink(missing_ok=True)
             raise
         (profile / 'aphrael-update-in-progress').unlink(missing_ok=True)
+    # Use Hermes' native per-profile Project store. This is durable Hermes
+    # state, not a distribution-owned task/project database.
+    profile_home = root / 'profiles' / 'aphrael'
+    prior_home = os.environ.get('HERMES_HOME')
+    try:
+        os.environ['HERMES_HOME'] = str(profile_home)
+        from hermes_cli import projects_db
+        with projects_db.connect_closing() as conn:
+            if projects_db.find_by_primary_path(conn, str(source)) is None:
+                projects_db.create_project(
+                    conn, name='Aphrael', slug='aphrael', folders=[str(source)],
+                    primary_path=str(source), description='Aphrael Hermes distribution',
+                    board_slug='aphrael',
+                )
+    finally:
+        if prior_home is None:
+            os.environ.pop('HERMES_HOME', None)
+        else:
+            os.environ['HERMES_HOME'] = prior_home
     check(root, source)
     dump(Path.home() / '.aphrael' / 'installation.json', {'root': str(root), 'source': str(source), 'workspace': str(workspace), 'python': sys.executable, 'hermes_commit': PIN})
 

@@ -146,12 +146,16 @@ def test_reviewer_cannot_write_or_spawn_worker(boundary):
     assert guard.pre_tool_call('aphrael_work_delegate', {'instruction': 'task'})['action'] == 'block'
     assert guard.pre_tool_call('aphrael_work_status', {'request_id': 'a' * 32}) is None
     assert guard.pre_tool_call('aphrael_work_recall', {}) is None
+    assert guard.pre_tool_call('aphrael_work_recent', {}) is None
 
 
 def test_parent_can_use_native_work_tools_without_terminal_authority(boundary):
+    assert guard.pre_tool_call('tool_search', {'queries': ['Aphrael Work']}) is None
+    assert guard.pre_tool_call('tool_describe', {'names': ['aphrael_work_recent']}) is None
     assert guard.pre_tool_call('aphrael_work_delegate', {'instruction': 'task'}) is None
     assert guard.pre_tool_call('aphrael_work_status', {'request_id': 'a' * 32}) is None
     assert guard.pre_tool_call('aphrael_work_recall', {}) is None
+    assert guard.pre_tool_call('aphrael_work_recent', {}) is None
     assert guard.pre_tool_call('terminal', {'command': 'python scripts/aphrael_work_bridge.py'})['action'] == 'block'
 
 
@@ -171,6 +175,20 @@ def test_additional_read_root_does_not_expand_write_authority(boundary):
     assert guard.pre_tool_call('terminal', {**args, 'workdir': str(workspace / 'outputs')})['action'] == 'block'
     assert guard.pre_tool_call('terminal', {**args, 'command': 'git reset --hard'})['action'] == 'block'
     assert guard.pre_tool_call('terminal', {**args, 'approval': True})['action'] == 'block'
+
+
+def test_common_read_only_git_inspection_commands_are_allowed(boundary):
+    _, _, workspace, _, _ = boundary
+    for command in (
+        'git status --short', 'git status --short --branch',
+        'git branch --show-current', 'git rev-parse HEAD',
+        'git log -1 --oneline --decorate', 'git --no-pager log -5 --oneline',
+        'git remote -v',
+    ):
+        result = guard.pre_tool_call('terminal', {
+            'command': command, 'workdir': str(workspace),
+        })
+        assert result['args']['workdir'] == str(workspace)
 
 
 def test_protected_source_is_reviewable_but_never_writable(boundary):
@@ -194,6 +212,23 @@ def test_nested_read_root_does_not_authorize_private_paths(boundary):
     p['read_roots'] = [str(workspace), str(private)]
     policy_path.write_text(json.dumps(p))
     assert guard.pre_tool_call('read_file', {'path': str(private / 'text')})['action'] == 'block'
+
+
+def test_search_approved_root_prunes_private_descendants(boundary):
+    _, _, workspace, _, _ = boundary
+    hidden = workspace / '.git'
+    hidden.mkdir()
+    (hidden / 'config').write_text('private')
+    public = workspace / 'tests'
+    public.mkdir()
+    (public / 'test_example.py').write_text('def test_example(): pass')
+    result = guard.pre_tool_call('search_files', {
+        'target': 'files', 'pattern': '*.py', 'path': str(workspace), 'limit': 50,
+    })
+    assert result['args']['path'] == str(workspace)
+    assert guard.pre_tool_call('search_files', {
+        'target': 'files', 'pattern': '*', 'path': str(hidden),
+    })['action'] == 'block'
 
 
 def test_operator_provisions_immutable_expected_outcome(tmp_path):

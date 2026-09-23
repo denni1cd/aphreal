@@ -25,6 +25,8 @@ Trusted setup supplies `HERMES_HOME/aphrael-policy.json`; an explicit
 
 Roles are `parent`, `worker`, `reviewer`. Every process must explicitly select the
 same `HERMES_KANBAN_BOARD`; worker and reviewer have separate Hermes homes.
+Read-only `tool_search` and `tool_describe` let Aphrael discover registered
+native tools; every discovered tool call still passes this policy boundary.
 Optional `read_roots` defaults to `[workspace]`. Relative file paths resolve from
 `workspace`; absolute source paths can use an additional approved read root.
 Only trusted setup changes this policy. Models cannot authorize new roots, change

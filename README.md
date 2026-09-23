@@ -23,6 +23,28 @@ Then start Aphrael:
 
 `-Surface Tui` and `-Surface Desktop` use Hermes' supported interactive surfaces. `-Surface Check` validates the installed profiles without starting a conversation.
 
+For a local programmatic turn from Desktop ChatGPT Work or PowerShell, use the
+Front Door:
+
+```powershell
+.\APHRAEL.ps1 ask "What are you currently working on?"
+```
+
+It emits a JSON envelope containing success/status, the real Hermes session ID,
+Aphrael's response, optional native Hermes Project context, a task ID field
+(null where this Hermes interface has none), and error details. Continue the same Hermes
+conversation with `--resume <session_id>`. See
+[Front Door operations](docs/FRONT_DOOR.md) for the exact Desktop Work
+instruction and project/output rules.
+
+To follow work that Aphrael delegated to ChatGPT Work, use `work-recent` to find
+the bridge request ID and `work-status <request_id>` to inspect its current
+record or refresh a GitHub result.
+Use `activity` for a combined view of active Hermes tasks and recent Work
+handoffs. Ordinary Work requests stay in Aphrael's private local queue. A
+GitHub PR handoff requires an explicit target repository; Aphrael's repository
+is not the default for other work. See [Work pickup](docs/WORK_PICKUP.md).
+
 Run repository verification with:
 
 ```powershell
@@ -35,4 +57,4 @@ Profiles keep their own configuration, policy, workspace, and runtime state. The
 
 The guardrail plugin uses both a fail-closed Hermes shell hook and native tool hooks. It limits reads to the configured workspace and source checkout, limits writes to the workspace output directory, blocks private runtime paths, and requires an independent reviewer check before a controlled write can be recorded as verified. It is a policy boundary for Hermes tools, not a claim of OS isolation from another process running as the same Windows user.
 
-See [the setup and operations guide](docs/HERMES_GUIDE.md), the [approved contract](docs/HERMES_REPLATFORM_CONTRACT.md), and [Hermes research](docs/HERMES_RESEARCH.md).
+See [Front Door operations](docs/FRONT_DOOR.md), [the setup and operations guide](docs/HERMES_GUIDE.md), the [approved contract](docs/HERMES_REPLATFORM_CONTRACT.md), and [Hermes research](docs/HERMES_RESEARCH.md).

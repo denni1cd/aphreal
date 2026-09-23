@@ -1,4 +1,4 @@
-"""Private and GitHub request handoffs to a scheduled local Work runner."""
+"""Private and GitHub request handoffs to an on-demand Work runner."""
 
 from __future__ import annotations
 
@@ -131,7 +131,7 @@ def delegate_to_work(instruction: str, repository: str | None = None, base: str 
 
 
 def pending(limit: int = 10) -> list[dict]:
-    """Only new, unclaimed requests enter the scheduled pickup queue."""
+    """List new, unclaimed requests for manual recovery."""
     if not 1 <= limit <= 50:
         raise ValueError("limit must be between 1 and 50")
     directory = state_root() / "requests"
@@ -151,7 +151,7 @@ def pending(limit: int = 10) -> list[dict]:
     return records
 
 
-def claim(request_id: str, worker: str = "scheduled-work") -> dict:
+def claim(request_id: str, worker: str = "chatgpt-work") -> dict:
     """Atomically reserve one live pending request for a Work runner."""
     if not worker or len(worker) > 80 or any(ch in worker for ch in "\r\n"):
         raise ValueError("invalid worker name")
@@ -345,7 +345,7 @@ def main() -> int:
     pending_parser.add_argument("--limit", type=int, default=10)
     claim_parser = sub.add_parser("claim")
     claim_parser.add_argument("request_id")
-    claim_parser.add_argument("--worker", default="scheduled-work")
+    claim_parser.add_argument("--worker", default="chatgpt-work")
     complete_parser = sub.add_parser("complete")
     complete_parser.add_argument("request_id")
     complete_parser.add_argument("--result-file", type=Path, required=True)

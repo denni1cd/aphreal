@@ -42,6 +42,10 @@ prose that merely resembles an ID is never promoted into authoritative data.
 last-observed statuses. `work-status` refreshes one request against GitHub and
 returns its PR and verified result when available. These commands do not create
 a Hermes conversation or replace its native task state.
+The Work bridge starts PRs from `main` by default. For work on a published
+development branch, explicitly ask Aphrael to use that branch as the PR base;
+the bridge records and verifies the selected base. It does not infer the base
+from the local checkout.
 
 ## Projects
 

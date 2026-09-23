@@ -101,6 +101,24 @@ def test_delegate_creates_branch_request_pr_and_state(tmp_path, monkeypatch):
     assert any("repos/denni1cd/aphreal/pulls" in call for call in calls)
 
 
+def test_delegate_can_target_explicit_existing_development_branch(tmp_path, monkeypatch):
+    monkeypatch.setenv("APHRAEL_WORK_STATE", str(tmp_path))
+    calls = []
+    replies = iter([
+        {"object": {"sha": "base-sha"}},
+        {"commit": {"sha": "request-sha"}},
+        {"number": 13, "html_url": "https://github.test/pull/13"},
+    ])
+    monkeypatch.setattr(bridge, "gh_json", lambda *args: calls.append(args) or next(replies))
+    monkeypatch.setattr(bridge, "run_gh", lambda *args: calls.append(args) or "")
+    record = bridge.delegate_to_work("Update docs", "codex/aphrael-front-door-v1")
+    assert record["base"] == "codex/aphrael-front-door-v1"
+    assert any("repos/denni1cd/aphreal/git/ref/heads/codex/aphrael-front-door-v1" in call for call in calls)
+    assert any("-f" in call and "base=codex/aphrael-front-door-v1" in call for call in calls)
+    with pytest.raises(ValueError):
+        bridge.delegate_to_work("Update docs", "../main")
+
+
 def test_recent_identifies_handoffs_without_claiming_live_status(tmp_path, monkeypatch):
     request_id, _, _ = stored_request(tmp_path, monkeypatch)
     recent = bridge.recent()

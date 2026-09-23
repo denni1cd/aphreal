@@ -19,6 +19,7 @@ BASE = "main"
 TITLE_PREFIX = "APHRAEL_WORK_REQUEST"
 RESULT_MARKER = "APHRAEL_WORK_RESULT"
 SAFE_ID = re.compile(r"^[0-9a-f]{32}$")
+SAFE_BASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$")
 
 
 def state_root() -> Path:
@@ -65,15 +66,17 @@ def request_body(request_id: str, instruction: str) -> str:
     )
 
 
-def delegate_to_work(instruction: str) -> dict:
+def delegate_to_work(instruction: str, base: str = BASE) -> dict:
     instruction = instruction.strip()
     if not instruction:
         raise ValueError("instruction must not be empty")
+    if not SAFE_BASE.fullmatch(base) or any(part in {"", ".", ".."} or part.endswith(".lock") for part in base.split("/")):
+        raise ValueError("invalid base branch")
     request_id = uuid.uuid4().hex
     branch = f"aphrael/work-{request_id}"
     title = f"{TITLE_PREFIX} {request_id}"
     body = request_body(request_id, instruction)
-    base_sha = gh_json("api", f"repos/{REPO}/git/ref/heads/{BASE}")["object"]["sha"]
+    base_sha = gh_json("api", f"repos/{REPO}/git/ref/heads/{base}")["object"]["sha"]
     run_gh("api", "-X", "POST", f"repos/{REPO}/git/refs", "-f", f"ref=refs/heads/{branch}",
            "-f", f"sha={base_sha}")
     remote_path = f".aphrael-work/requests/{request_id}.txt"
@@ -83,7 +86,7 @@ def delegate_to_work(instruction: str) -> dict:
                           "-f", f"message=Create Aphrael Work request {request_id}",
                           "-f", f"content={encoded}", "-f", f"branch={branch}")
         pr = gh_json("api", "-X", "POST", f"repos/{REPO}/pulls", "-f", f"title={title}",
-                     "-f", f"head={branch}", "-f", f"base={BASE}", "-f", f"body={body}")
+                     "-f", f"head={branch}", "-f", f"base={base}", "-f", f"body={body}")
     except Exception:
         # A failed creation has no usable durable request; clean up its private branch.
         subprocess.run(["gh", "api", "-X", "DELETE", f"repos/{REPO}/git/refs/heads/{branch}"],
@@ -92,7 +95,7 @@ def delegate_to_work(instruction: str) -> dict:
     record = {
         "request_id": request_id, "instruction": instruction,
         "instruction_sha256": digest(instruction), "request_body_sha256": digest(body),
-        "repository": REPO, "base": BASE, "base_sha": base_sha, "branch": branch,
+        "repository": REPO, "base": base, "base_sha": base_sha, "branch": branch,
         "request_file": remote_path, "request_commit_sha": created["commit"]["sha"],
         "pr_number": pr["number"], "pr_url": pr["html_url"], "status": "pending",
     }
@@ -125,7 +128,7 @@ def check(request_id: str) -> dict:
         pr.get("title") != f"{TITLE_PREFIX} {request_id}"
         or pr.get("body") != expected_body
         or pr.get("head", {}).get("ref") != record["branch"]
-        or pr.get("base", {}).get("ref") != BASE
+        or pr.get("base", {}).get("ref") != record.get("base", BASE)
     )
     remote = gh_json("api", "-X", "GET", f"repos/{REPO}/contents/{record['request_file']}",
                      "-f", f"ref={record['branch']}")
@@ -206,6 +209,7 @@ def main() -> int:
     delegate = sub.add_parser("delegate")
     delegate.add_argument("instruction", nargs="?")
     delegate.add_argument("--instruction-file", type=Path)
+    delegate.add_argument("--base", default=BASE, help="Existing GitHub base branch (default: main)")
     status = sub.add_parser("status")
     status.add_argument("request_id")
     recall_parser = sub.add_parser("recall")
@@ -218,7 +222,7 @@ def main() -> int:
             if bool(args.instruction) == bool(args.instruction_file):
                 raise ValueError("provide exactly one instruction or --instruction-file")
             instruction = args.instruction_file.read_text(encoding="utf-8") if args.instruction_file else args.instruction
-            output = delegate_to_work(instruction)
+            output = delegate_to_work(instruction, args.base)
         elif args.command == "status":
             output = check(args.request_id)
         elif args.command == "recent":

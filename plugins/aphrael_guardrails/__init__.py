@@ -26,7 +26,7 @@ def register(ctx):
     work_tools = [
         ('aphrael_work_delegate',
          'Delegate an authorized natural-language repository task to ChatGPT Work through a GitHub PR.',
-         {'instruction': {'type': 'string'}}, ['instruction']),
+         {'instruction': {'type': 'string'}, 'base': {'type': 'string'}}, ['instruction']),
         ('aphrael_work_status',
          'Verify the durable GitHub result for an existing Aphrael Work request.',
          {'request_id': {'type': 'string'}}, ['request_id']),
@@ -45,8 +45,8 @@ def register(ctx):
         def work_handler(args, _name=name, **kwargs):
             try:
                 if _name == 'aphrael_work_delegate':
-                    record = work_bridge.delegate_to_work(args['instruction'])
-                    output = {key: record[key] for key in ('request_id', 'pr_url', 'status')}
+                    record = work_bridge.delegate_to_work(args['instruction'], args.get('base', work_bridge.BASE))
+                    output = {key: record[key] for key in ('request_id', 'pr_url', 'status', 'base')}
                 elif _name == 'aphrael_work_status':
                     record = work_bridge.check(args['request_id'])
                     output = {key: record[key] for key in ('request_id', 'status')}

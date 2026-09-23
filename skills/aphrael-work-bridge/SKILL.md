@@ -9,6 +9,9 @@ Use `aphrael_work_delegate` for a user-authorized task that should run in
 ChatGPT Work. Pass the complete natural-language instruction. Do not run the
 delegated task locally. Report its request ID and PR as pending until
 `aphrael_work_status` returns `completed + verified`.
+The default PR base is `main`. When the user names an existing development
+branch as the target, pass that branch in `base`; do not infer it from a local
+checkout or change it after the request is created.
 
 Use `aphrael_work_status` with the request ID to validate the originating PR,
 request file, returned ID, request hash, result hash, result author authority,

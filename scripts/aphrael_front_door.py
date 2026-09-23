@@ -139,7 +139,11 @@ def _prompt(
         "as an ordinary user turn. Hermes remains authoritative for memory, sessions, "
         "skills, delegation, Kanban, tools, and verification. Do not create a project "
         "unless the user clearly asks to start a persistent project. Do not redelegate "
-        "a request for an existing Work result; use aphrael-work-bridge recall/status."
+        "a request for an existing Work result; use aphrael-work-bridge recall/status. "
+        "In your reply to Clifton, lead with the useful answer in natural language. "
+        "Keep internal IDs and tool details brief unless he asks for them or needs them "
+        "to follow the work. For a brief follow-up, use one or two natural sentences "
+        "instead of a status list. Report uncertainty and failures plainly."
     )
     if project:
         boundary += (

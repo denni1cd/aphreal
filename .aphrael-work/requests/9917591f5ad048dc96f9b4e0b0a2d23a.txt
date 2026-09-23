@@ -1,0 +1,5 @@
+APHRAEL_WORK_REQUEST
+id: 9917591f5ad048dc96f9b4e0b0a2d23a
+instruction_sha256: 2aac2bd890149109fa30ef8ac96be513ecdb3bb0c8fe9e5e2a3bbf79cfd579fe
+task:
+Add a concise worked example to docs/FRONT_DOOR.md showing an Aphrael-requested repository change, preserving the bridge request ID and PR URL, checking status with that ID, and distinguishing a verified Work report from reviewed code. Do not edit files outside this documentation change. Commit the documentation change on the bridge PR branch and post the protocol result comment.

@@ -105,7 +105,8 @@ def checked_path(value, p, write=False, profile_name=None):
     return path
 
 
-PASSIVE = {'memory', 'session_search', 'session_read', 'todo', 'skills_list', 'skill_view'}
+PASSIVE = {'memory', 'session_search', 'session_read', 'todo', 'skills_list', 'skill_view',
+           'tool_search', 'tool_describe'}
 KANBAN = {'kanban_show', 'kanban_list', 'kanban_create', 'kanban_complete', 'kanban_block', 'kanban_comment',
           'kanban_request_review', 'kanban_request_changes', 'kanban_heartbeat', 'kanban_unblock', 'kanban_link', 'kanban_attachments'}
 

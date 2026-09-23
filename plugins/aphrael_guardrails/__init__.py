@@ -25,8 +25,9 @@ def register(ctx):
 
     work_tools = [
         ('aphrael_work_delegate',
-         'Delegate an authorized natural-language repository task to ChatGPT Work through a GitHub PR.',
-         {'instruction': {'type': 'string'}, 'base': {'type': 'string'}}, ['instruction']),
+         'Delegate an authorized task to Work privately, or to an explicit GitHub repository through a PR.',
+         {'instruction': {'type': 'string'}, 'repository': {'type': 'string'}, 'base': {'type': 'string'}},
+         ['instruction']),
         ('aphrael_work_status',
          'Verify the durable GitHub result for an existing Aphrael Work request.',
          {'request_id': {'type': 'string'}}, ['request_id']),
@@ -45,19 +46,19 @@ def register(ctx):
         def work_handler(args, _name=name, **kwargs):
             try:
                 if _name == 'aphrael_work_delegate':
-                    record = work_bridge.delegate_to_work(args['instruction'], args.get('base', work_bridge.BASE))
-                    output = {key: record[key] for key in ('request_id', 'pr_url', 'status', 'base')}
+                    record = work_bridge.delegate_to_work(args['instruction'], args.get('repository'), args.get('base', work_bridge.BASE))
+                    output = {key: record.get(key) for key in ('request_id', 'kind', 'pr_url', 'status', 'base', 'repository')}
                 elif _name == 'aphrael_work_status':
                     record = work_bridge.check(args['request_id'])
                     output = {key: record[key] for key in ('request_id', 'status')}
-                    for key in ('detail', 'result', 'pr_url', 'result_comment_url'):
+                    for key in ('detail', 'result', 'pr_url', 'result_comment_url', 'kind', 'repository'):
                         if key in record:
                             output[key] = record[key]
                 elif _name == 'aphrael_work_recent':
                     output = {'status': 'ok', 'requests': work_bridge.recent(args.get('limit', 10))}
                 else:
                     record = work_bridge.recall(args.get('request_id'))
-                    output = {key: record[key] for key in ('request_id', 'status', 'result', 'pr_url')}
+                    output = {key: record.get(key) for key in ('request_id', 'status', 'result', 'pr_url', 'kind', 'repository')}
                     if 'result_comment_url' in record:
                         output['result_comment_url'] = record['result_comment_url']
                 return json.dumps(output)

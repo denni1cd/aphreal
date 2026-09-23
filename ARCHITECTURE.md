@@ -27,6 +27,14 @@ integration, and returns a JSON envelope. Hermes' gateway was inspected for
 this milestone; it dispatches configured messaging platforms and does not
 provide a general local request API. The supported quiet single-query chat
 interface is therefore the thinner and more appropriate native entry point.
+The PowerShell entry point also starts the existing Hermes Kanban dispatcher
+when needed. `activity` reads native Kanban tasks and the separate Work bridge
+records without creating a new task database. New GitHub bridge requests name
+their target repository explicitly; the PR is a transport for public-safe
+repository work. Personal Work handoffs stay in the private local bridge queue.
+Their result is a recorded worker report, not independently verified external
+success. A scheduled runner can claim a pending request atomically; old bridge
+records are excluded from automatic pickup.
 
 Project context comes from Hermes' per-profile `projects.db`. Setup registers
 this checkout as the `aphrael` Project and the front door only reads it through

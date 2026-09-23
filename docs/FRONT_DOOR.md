@@ -29,6 +29,7 @@ From the repository checkout:
 .\APHRAEL.ps1 ask "What did we decide?" --resume 20260919_225802_db2e32
 .\APHRAEL.ps1 ask "Run the tests" --workspace-path C:\path\to\registered\repo
 .\APHRAEL.ps1 projects
+.\APHRAEL.ps1 activity --compact
 .\APHRAEL.ps1 work-recent --compact
 .\APHRAEL.ps1 work-status <request_id> --compact
 ```
@@ -39,13 +40,29 @@ native session store; the wrapper does not mint it. Hermes 0.21.2 does not
 return structured task metadata from quiet chat, so `task_id` remains null;
 prose that merely resembles an ID is never promoted into authoritative data.
 `work-recent` lists locally recorded bridge handoffs with exact request IDs and
-last-observed statuses. `work-status` refreshes one request against GitHub and
-returns its PR and verified result when available. These commands do not create
+last-observed statuses. `work-status` refreshes a GitHub request or checks a
+private local result. These commands do not create
 a Hermes conversation or replace its native task state.
+`activity` reads the Aphrael Kanban board and recent Work requests in one
+response. It refreshes pending Work requests by default and labels any refresh
+errors. The list of active Hermes tasks excludes old completed or blocked tasks;
+inspect a specific task ID when its history matters.
 The Work bridge starts PRs from `main` by default. For work on a published
 development branch, explicitly ask Aphrael to use that branch as the PR base;
 the bridge records and verifies the selected base. It does not infer the base
 from the local checkout.
+Every new GitHub handoff also requires an explicit `owner/repository`. The
+bridge can work with another repository and stores the repository on each
+request. A GitHub PR exposes its request text to people who can read that
+repository; do not use this transport for private personal work.
+When no repository is supplied, the handoff stays in a private local queue
+under `%USERPROFILE%\.aphrael\work_bridge`. Its result is labeled
+`completed + recorded`, meaning a worker report was stored and rehashed, not
+independent verification of the requested action. See [Work pickup](WORK_PICKUP.md).
+The Front Door starts the existing Hermes Kanban dispatcher on `ask` if it is
+not already running, so authorized durable tasks can continue after the turn.
+The Front Door itself still waits for each `ask` response; substantial tasks
+should be queued through Hermes Kanban when Aphrael needs to remain available.
 
 ## Projects
 
@@ -95,7 +112,7 @@ the separate reviewer observation.
 Conversational questions stay in the primary Aphrael session. Substantial
 authorized work can use Hermes delegation. “Have Work investigate X” continues
 to use `aphrael-work-bridge`; “What did Work find?” uses its status/recall tools
-and the durable verified record. The front-end Work conversation is not the
+and the durable result record. The front-end Work conversation is not the
 delegated Work worker. Existing request metadata, idempotency, and verified
 recall remain the loop boundary; the Front Door does not alter bridge triggers
 or feed delegated worker prompts back through itself.
@@ -112,7 +129,7 @@ tested, or merged.
 
 Paste this into a normal Desktop ChatGPT Work conversation:
 
-> When I address Aphrael, use your local PowerShell/terminal capability to run `& 'C:\Users\Zero\python_projects\ai\aphreal\APHRAEL.ps1' ask '<my complete request>' --compact`. Parse the returned JSON and give me the `response` as Aphrael's answer in natural text. Keep `session_id`, `project`, `task_id`, and any `error` available for follow-ups, but do not show routine metadata unless I ask or it helps me track work. On my next Aphrael message, add `--resume <the prior session_id>` unless I ask for a new conversation. When Aphrael delegates to Work, keep its bridge `request_id` and PR URL too. For a later progress question with a known request ID, call `APHRAEL.ps1 work-status <request_id> --compact`; if the ID is lost, use `APHRAEL.ps1 work-recent --compact` to identify the handoff, then refresh its status. Treat the Hermes session ID, Hermes task ID, and bridge request ID as different identifiers. Do not answer in Aphrael's place and do not invoke Hermes directly.
+> When I address Aphrael, use your local PowerShell/terminal capability to run `& 'C:\Users\Zero\python_projects\ai\aphreal\APHRAEL.ps1' ask '<my complete request>' --compact`. Parse the returned JSON and give me the `response` as Aphrael's answer in natural text. Keep `session_id`, `project`, `task_id`, and any `error` available for follow-ups, but do not show routine metadata unless I ask or it helps me track work. On my next Aphrael message, add `--resume <the prior session_id>` unless I ask for a new conversation. When Aphrael delegates to Work, keep its bridge `request_id` and PR URL when there is one. For a later progress question with a known request ID, call `APHRAEL.ps1 work-status <request_id> --compact`; if the ID is lost, use `APHRAEL.ps1 work-recent --compact` to identify the handoff, then refresh its status. For an overall progress question, use `APHRAEL.ps1 activity --compact` or ask Aphrael to check native Kanban and Work state. Treat the Hermes session ID, Hermes task ID, and bridge request ID as different identifiers. Do not answer in Aphrael's place and do not invoke Hermes directly.
 
 The request must be passed as one literal process argument; an automation
 should use an argument array rather than string-building when available.

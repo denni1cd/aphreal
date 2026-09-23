@@ -38,7 +38,12 @@ conversation with `--resume <session_id>`. See
 instruction and project/output rules.
 
 To follow work that Aphrael delegated to ChatGPT Work, use `work-recent` to find
-the bridge request ID and `work-status <request_id>` to refresh its GitHub result.
+the bridge request ID and `work-status <request_id>` to inspect its current
+record or refresh a GitHub result.
+Use `activity` for a combined view of active Hermes tasks and recent Work
+handoffs. Ordinary Work requests stay in Aphrael's private local queue. A
+GitHub PR handoff requires an explicit target repository; Aphrael's repository
+is not the default for other work. See [Work pickup](docs/WORK_PICKUP.md).
 
 Run repository verification with:
 

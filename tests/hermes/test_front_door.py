@@ -103,3 +103,31 @@ def test_work_status_and_recent_are_separate_from_hermes_session(monkeypatch, ca
     assert "session_id" not in status
     assert front_door.work_recent(argparse.Namespace(limit=10, compact=True)) == 0
     assert json.loads(capsys.readouterr().out)["requests"][0]["request_id"] == "a" * 32
+
+
+def test_activity_combines_native_tasks_and_distinct_work_requests(monkeypatch, capsys, tmp_path):
+    from plugins.aphrael_guardrails import work_bridge
+
+    monkeypatch.setattr(front_door, "installation", lambda: {
+        "python": "python", "root": str(tmp_path), "workspace": str(tmp_path)})
+    monkeypatch.setattr(front_door.subprocess, "run", lambda *args, **kwargs: type("Result", (), {
+        "returncode": 0,
+        "stdout": json.dumps([
+            {"id": "t_running", "title": "Research", "status": "running", "assignee": "worker"},
+            {"id": "t_done", "title": "Old work", "status": "done"},
+        ]),
+    })())
+    monkeypatch.setattr(work_bridge, "recent", lambda limit: [{
+        "request_id": "a" * 32, "kind": "github", "repository": "owner/other",
+        "instruction": "Update another project", "status": "pending", "pr_url": "https://github.test/pr/1"}])
+    monkeypatch.setattr(work_bridge, "check", lambda request_id: {
+        "request_id": request_id, "kind": "github", "repository": "owner/other",
+        "instruction": "Update another project", "status": "completed + verified",
+        "pr_url": "https://github.test/pr/1"})
+    assert front_door.activity(argparse.Namespace(limit=10, refresh=True, compact=True)) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert [task["id"] for task in output["active_hermes_tasks"]] == ["t_running"]
+    assert output["active_work_requests"] == []
+    assert output["recent_work_requests"][0]["kind"] == "github"
+    assert output["recent_work_requests"][0]["repository"] == "owner/other"
+    assert output["recent_work_requests"][0]["status"] == "completed + verified"

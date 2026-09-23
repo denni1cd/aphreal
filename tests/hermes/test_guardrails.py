@@ -150,6 +150,8 @@ def test_reviewer_cannot_write_or_spawn_worker(boundary):
 
 
 def test_parent_can_use_native_work_tools_without_terminal_authority(boundary):
+    assert guard.pre_tool_call('tool_search', {'queries': ['Aphrael Work']}) is None
+    assert guard.pre_tool_call('tool_describe', {'names': ['aphrael_work_recent']}) is None
     assert guard.pre_tool_call('aphrael_work_delegate', {'instruction': 'task'}) is None
     assert guard.pre_tool_call('aphrael_work_status', {'request_id': 'a' * 32}) is None
     assert guard.pre_tool_call('aphrael_work_recall', {}) is None

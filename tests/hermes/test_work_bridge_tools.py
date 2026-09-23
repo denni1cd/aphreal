@@ -40,8 +40,9 @@ def test_native_work_tools_register_with_strict_schemas(monkeypatch):
 
 def test_native_work_tool_invocation_calls_python_bridge(monkeypatch):
     calls = []
-    monkeypatch.setattr(plugin.work_bridge, "delegate_to_work", lambda instruction, base: calls.append(("delegate", instruction, base)) or {
-        "request_id": "a" * 32, "pr_url": "https://github.test/pull/1", "status": "pending", "base": base})
+    monkeypatch.setattr(plugin.work_bridge, "delegate_to_work", lambda instruction, repository, base: calls.append(("delegate", instruction, repository, base)) or {
+        "request_id": "a" * 32, "kind": "github", "pr_url": "https://github.test/pull/1", "status": "pending", "base": base,
+        "repository": repository})
     monkeypatch.setattr(plugin.work_bridge, "check", lambda request_id: calls.append(("status", request_id)) or {
         "request_id": request_id, "pr_url": "https://github.test/pull/1", "status": "completed + verified",
         "detail": "verified", "result": "finding"})
@@ -52,13 +53,13 @@ def test_native_work_tool_invocation_calls_python_bridge(monkeypatch):
         "request_id": "a" * 32, "status": "pending"}])
     ctx = registered(monkeypatch)
 
-    delegated = json.loads(ctx.tools["aphrael_work_delegate"]["handler"]({"instruction": "inspect"}))
+    delegated = json.loads(ctx.tools["aphrael_work_delegate"]["handler"]({"instruction": "inspect", "repository": "denni1cd/aphreal"}))
     verified = json.loads(ctx.tools["aphrael_work_status"]["handler"]({"request_id": "a" * 32}))
     recalled = json.loads(ctx.tools["aphrael_work_recall"]["handler"]({}))
     recent = json.loads(ctx.tools["aphrael_work_recent"]["handler"]({}))
 
-    assert delegated == {"request_id": "a" * 32, "pr_url": "https://github.test/pull/1", "status": "pending", "base": "main"}
+    assert delegated == {"request_id": "a" * 32, "kind": "github", "pr_url": "https://github.test/pull/1", "status": "pending", "base": "main", "repository": "denni1cd/aphreal"}
     assert verified["status"] == recalled["status"] == "completed + verified"
     assert verified["result"] == recalled["result"] == "finding"
     assert recent["requests"][0]["request_id"] == "a" * 32
-    assert calls == [("delegate", "inspect", "main"), ("status", "a" * 32), ("recall", None), ("recent", 10)]
+    assert calls == [("delegate", "inspect", "denni1cd/aphreal", "main"), ("status", "a" * 32), ("recall", None), ("recent", 10)]

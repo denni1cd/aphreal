@@ -7,6 +7,7 @@ single-query chat interface with the real ``aphrael`` profile.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -318,6 +319,89 @@ def work_recent(args: argparse.Namespace) -> int:
     return 1 if output.get("status") == "failed" else 0
 
 
+def work_pending(args: argparse.Namespace) -> int:
+    from plugins.aphrael_guardrails import work_bridge
+
+    try:
+        output = {"requests": work_bridge.pending(args.limit)}
+    except Exception as exc:
+        output = {"status": "failed", "detail": str(exc)}
+    print(json.dumps(output, ensure_ascii=False, indent=None if args.compact else 2))
+    return 1 if output.get("status") == "failed" else 0
+
+
+def work_claim(args: argparse.Namespace) -> int:
+    from plugins.aphrael_guardrails import work_bridge
+
+    try:
+        output = work_bridge.claim(args.request_id, args.worker)
+    except Exception as exc:
+        output = {"request_id": args.request_id, "status": "failed", "detail": str(exc)}
+    print(json.dumps(output, ensure_ascii=False, indent=None if args.compact else 2))
+    return 1 if output.get("status") == "failed" else 0
+
+
+def work_complete(args: argparse.Namespace) -> int:
+    from plugins.aphrael_guardrails import work_bridge
+
+    try:
+        result = Path(args.result_file).read_text(encoding="utf-8")
+        output = work_bridge.post_result(args.request_id, result, args.status)
+    except Exception as exc:
+        output = {"request_id": args.request_id, "status": "failed", "detail": str(exc)}
+    print(json.dumps(output, ensure_ascii=False, indent=None if args.compact else 2))
+    return 1 if output.get("status") == "failed" else 0
+
+
+def activity(args: argparse.Namespace) -> int:
+    """Read current native task state and recent Work handoffs without creating state."""
+    from plugins.aphrael_guardrails import work_bridge
+
+    install = installation()
+    env = os.environ.copy()
+    env.update(
+        HERMES_HOME=str(install["root"]),
+        HERMES_KANBAN_HOME=str(Path(install["root"]) / "aphrael-board"),
+        HERMES_KANBAN_BOARD="aphrael",
+    )
+    result = subprocess.run(
+        [str(install["python"]), "-m", "hermes_cli.main", "-p", "aphrael",
+         "kanban", "list", "--json", "--sort", "updated"],
+        cwd=install["workspace"], env=env, text=True, encoding="utf-8",
+        errors="replace", capture_output=True,
+    )
+    if result.returncode:
+        print(json.dumps({"success": False, "error": result.stderr.strip() or "Kanban unavailable"},
+                         ensure_ascii=False, indent=None if args.compact else 2))
+        return 1
+    active_states = {"triage", "todo", "ready", "scheduled", "running", "review"}
+    tasks = json.loads(result.stdout)
+    active_tasks = [{key: task.get(key) for key in ("id", "title", "status", "assignee", "project_id", "session_id")}
+                    for task in tasks if task.get("status") in active_states]
+    requests = work_bridge.recent(args.limit)
+    errors = []
+    for index, request in enumerate(requests):
+        if request.get("status") == "pending" and args.refresh:
+            try:
+                checked = work_bridge.check(request["request_id"])
+                requests[index] = {key: checked.get(key) for key in (
+                    "request_id", "kind", "instruction", "repository", "status", "pr_url", "detail"
+                )}
+                requests[index]["pickup_state"] = request.get("pickup_state")
+            except Exception as exc:
+                errors.append({"request_id": request["request_id"], "error": str(exc)})
+    output = {
+        "success": True,
+        "as_of": datetime.now(timezone.utc).isoformat(),
+        "active_hermes_tasks": active_tasks,
+        "active_work_requests": [r for r in requests if r.get("status") == "pending"],
+        "recent_work_requests": requests,
+        "refresh_errors": errors,
+    }
+    print(json.dumps(output, ensure_ascii=False, indent=None if args.compact else 2))
+    return 0
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="aphrael", description="Local front door to the real Aphrael Hermes profile")
     commands = root.add_subparsers(dest="command", required=True)
@@ -329,7 +413,12 @@ def parser() -> argparse.ArgumentParser:
     ask_parser.set_defaults(handler=ask)
     projects_parser = commands.add_parser("projects", help="List native Hermes Projects registered for Aphrael")
     projects_parser.set_defaults(handler=list_projects)
-    status_parser = commands.add_parser("work-status", help="Refresh one Work handoff from GitHub")
+    activity_parser = commands.add_parser("activity", help="Summarize active Hermes tasks and Work requests")
+    activity_parser.add_argument("--limit", type=int, default=10)
+    activity_parser.add_argument("--no-refresh", dest="refresh", action="store_false")
+    activity_parser.add_argument("--compact", action="store_true")
+    activity_parser.set_defaults(handler=activity, refresh=True)
+    status_parser = commands.add_parser("work-status", help="Check one private or GitHub Work handoff")
     status_parser.add_argument("request_id")
     status_parser.add_argument("--compact", action="store_true")
     status_parser.set_defaults(handler=work_status)
@@ -337,6 +426,21 @@ def parser() -> argparse.ArgumentParser:
     recent_parser.add_argument("--limit", type=int, default=10)
     recent_parser.add_argument("--compact", action="store_true")
     recent_parser.set_defaults(handler=work_recent)
+    pending_parser = commands.add_parser("work-pending", help="List eligible unclaimed Work handoffs")
+    pending_parser.add_argument("--limit", type=int, default=10)
+    pending_parser.add_argument("--compact", action="store_true")
+    pending_parser.set_defaults(handler=work_pending)
+    claim_parser = commands.add_parser("work-claim", help="Reserve one pending handoff for a Work runner")
+    claim_parser.add_argument("request_id")
+    claim_parser.add_argument("--worker", default="scheduled-work")
+    claim_parser.add_argument("--compact", action="store_true")
+    claim_parser.set_defaults(handler=work_claim)
+    complete_parser = commands.add_parser("work-complete", help="Record one claimed Work result")
+    complete_parser.add_argument("request_id")
+    complete_parser.add_argument("--result-file", required=True)
+    complete_parser.add_argument("--status", choices=["completed", "failed"], default="completed")
+    complete_parser.add_argument("--compact", action="store_true")
+    complete_parser.set_defaults(handler=work_complete)
     return root
 
 
